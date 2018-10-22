@@ -24,6 +24,11 @@
 #include "../m_menu.h"
 #include "../z_zone.h"
 
+
+#ifdef HAVE_DISCORDRPC
+#include "discord.h"
+#endif
+
 #ifdef MASTERSERVER
 
 static int     MSId;
@@ -405,6 +410,10 @@ void RegisterServer(void)
 	{
 		Finish_registration();
 	}
+
+#ifdef HAVE_DISCORDRPC
+	DRPC_UpdatePresence();
+#endif
 }
 
 static void UpdateServer(void)
@@ -444,6 +453,10 @@ void UnregisterServer(void)
 	{
 		Finish_unlist();
 	}
+
+#ifdef HAVE_DISCORDRPC
+	DRPC_UpdatePresence();
+#endif
 }
 
 static boolean Online(void)

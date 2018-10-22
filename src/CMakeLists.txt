@@ -148,6 +148,8 @@ target_compile_features(SRB2SDL2 PRIVATE c_std_23 cxx_std_17)
 ### Configuration
 set(SRB2_CONFIG_DEV_BUILD OFF CACHE BOOL
 	"Compile a development build of SRB2.")
+set(SRB2_CONFIG_HAVE_DISCORDRPC OFF CACHE BOOL
+	"Enable Discord rich presence support.")
 
 add_subdirectory(blua)
 add_subdirectory(netcode)
@@ -163,6 +165,19 @@ endif()
 
 if(CMAKE_COMPILER_IS_GNUCC)
 	find_program(OBJCOPY objcopy)
+endif()
+
+# TO-DO: make this check for the dependency like the others..
+if(${SRB2_CONFIG_HAVE_DISCORDRPC})
+	add_definitions(-DHAVE_DISCORDRPC)
+	set(SRB2_DISCORDRPC_SOURCES
+		discord.c
+		discord.h
+	)
+
+	prepend_sources(SRB2_DISCORDRPC_SOURCES)
+
+	source_group("Discord RPC" FILES ${SRB2_DISCORDRPC_SOURCES})
 endif()
 
 if("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")

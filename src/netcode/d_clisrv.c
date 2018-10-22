@@ -54,6 +54,10 @@
 #include "commands.h"
 #include "protocol.h"
 
+#ifdef HAVE_DISCORDRPC
+#include "discord.h"
+#endif
+
 //
 // NETWORKING
 //
@@ -311,6 +315,10 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 
 	if (!rejoined)
 		LUA_HookInt(newplayernum, HOOK(PlayerJoin));
+
+#ifdef HAVE_DISCORDRPC
+	DRPC_UpdatePresence();
+#endif
 }
 
 static void UnlinkPlayerFromNode(INT32 playernum)
@@ -538,6 +546,10 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 	}
 	else
 		CL_RemovePlayer(pnum, kickreason);
+
+#ifdef HAVE_DISCORDRPC
+	DRPC_UpdatePresence();
+#endif
 }
 
 // If in a special stage, redistribute the player's

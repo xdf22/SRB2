@@ -58,6 +58,10 @@
 #include "hardware/hw_glob.h"
 #endif
 
+#ifdef HAVE_DISCORDRPC
+#include "discord.h"
+#endif
+
 gameaction_t gameaction;
 gamestate_t gamestate = GS_NULL;
 UINT8 ultimatemode = false;
@@ -2539,6 +2543,10 @@ void G_Ticker(boolean run)
 			memset(player_name_changes, 0, sizeof player_name_changes);
 		}
 	}
+
+#ifdef HAVE_DISCORDRPC
+	Discord_RunCallbacks();
+#endif
 }
 
 //
@@ -5641,6 +5649,9 @@ INT32 G_FindMapByNameOrCode(const char *mapname, char **realmapnamep)
 void G_SetGamestate(gamestate_t newstate)
 {
 	gamestate = newstate;
+#ifdef HAVE_DISCORDRPC
+	DRPC_UpdatePresence();
+#endif
 }
 
 /* These functions handle the exitgame flag. Before, when the user
