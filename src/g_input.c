@@ -42,6 +42,11 @@ INT32 joyxmove[JOYAXISSET], joyymove[JOYAXISSET], joy2xmove[JOYAXISSET], joy2ymo
 // current state of the keys: true if pushed
 UINT8 gamekeydown[NUMINPUTS];
 
+// Lactozilla: Touch input buttons
+#ifdef TOUCHINPUTS
+touchconfig_t touchconfig[NUM_GAMECONTROLS];
+#endif
+
 // two key codes (or virtual key) per game control
 INT32 gamecontrol[NUM_GAMECONTROLS][2];
 INT32 gamecontrolbis[NUM_GAMECONTROLS][2]; // secondary splitscreen player
@@ -142,6 +147,28 @@ void G_MapEventsToControls(event_t *ev)
 #endif
 			break;
 
+#ifdef TOUCHINPUTS
+		case ev_touchdown:
+			for (i = 0; i < NUM_GAMECONTROLS; i++)
+			{
+				INT32 x = ev->x;
+				INT32 y = ev->y;
+				touchconfig_t *butt = &touchconfig[i];
+				if (x >= butt->x && x <= butt->x + butt->w && y >= butt->y && y <= butt->y + butt->h)
+				{
+					gamekeydown[gamecontrol[i][0]] = 1;
+					break;
+				}
+			}
+			break;
+
+		case ev_touchup:
+			// lol
+			for (i = 0; i < NUM_GAMECONTROLS; i++)
+				gamekeydown[gamecontrol[i][0]] = 0;
+			break;
+#endif
+
 		case ev_mouse: // buttons are virtual keys
 			mouse.rdx = ev->x;
 			mouse.rdy = ev->y;
@@ -173,6 +200,8 @@ void G_MapEventsToControls(event_t *ev)
 		default:
 			break;
 	}
+
+#undef THISMACRONEEDSANAME
 
 	// ALWAYS check for mouse & joystick double-clicks even if no mouse event
 	for (i = 0; i < MOUSEBUTTONS; i++)
@@ -775,7 +804,112 @@ void G_DefineDefaultControls(void)
 		gamecontrolbisdefault[i][GC_TOSSFLAG     ][1] = KEY_2HAT1+0; // D-Pad Up
 		//gamecontrolbisdefault[i][GC_SCORES       ][1] = KEY_2HAT1+1; // D-Pad Down
 	}
+
+#ifdef TOUCHINPUTS
+	touch_dpad_tiny = true;
+	G_DefineTouchControls();
+#endif
 }
+
+// Lactozilla: Touch input buttons
+#ifdef TOUCHINPUTS
+INT32 touch_dpad_x, touch_dpad_y, touch_dpad_w, touch_dpad_h;
+boolean touch_dpad_tiny;
+
+void G_DefineTouchControls(void)
+{
+	if (touch_dpad_tiny)
+	{
+		touch_dpad_x = 24;
+		touch_dpad_y = 128;
+		touch_dpad_w = 32;
+		touch_dpad_h = 32;
+
+		// Up
+		touchconfig[GC_FORWARD].x = touch_dpad_x + 8;
+		touchconfig[GC_FORWARD].y = touch_dpad_y - 8;
+		touchconfig[GC_FORWARD].w = 20;
+		touchconfig[GC_FORWARD].h = 16;
+
+		// Down
+		touchconfig[GC_BACKWARD].x = touch_dpad_x + 8;
+		touchconfig[GC_BACKWARD].y = touch_dpad_y + 24;
+		touchconfig[GC_BACKWARD].w = 20;
+		touchconfig[GC_BACKWARD].h = 16;
+
+		// Left
+		touchconfig[GC_STRAFELEFT].x = touch_dpad_x - 8;
+		touchconfig[GC_STRAFELEFT].y = touch_dpad_y + 8;
+		touchconfig[GC_STRAFELEFT].w = 16;
+		touchconfig[GC_STRAFELEFT].h = 14;
+
+		// Right
+		touchconfig[GC_STRAFERIGHT].x = touch_dpad_x + 24;
+		touchconfig[GC_STRAFERIGHT].y = touch_dpad_y + 8;
+		touchconfig[GC_STRAFERIGHT].w = 16;
+		touchconfig[GC_STRAFERIGHT].h = 14;
+
+		// Spin
+		touchconfig[GC_SPIN].x = 232;
+		touchconfig[GC_SPIN].y = 148;
+		touchconfig[GC_SPIN].w = 24;
+		touchconfig[GC_SPIN].h = 24;
+
+		// Jump
+		touchconfig[GC_JUMP].x = touchconfig[GC_SPIN].x + touchconfig[GC_SPIN].w + 12;
+		touchconfig[GC_JUMP].y = touchconfig[GC_SPIN].y;
+		touchconfig[GC_JUMP].w = 24;
+		touchconfig[GC_JUMP].h = 24;
+	}
+	else
+	{
+		INT32 x;
+
+		touch_dpad_x = 24;
+		touch_dpad_y = 92;
+		touch_dpad_w = 64;
+		touch_dpad_h = 64;
+
+		x = (touch_dpad_x + touch_dpad_w) - (touch_dpad_w / 2);
+
+		// Up
+		touchconfig[GC_FORWARD].x = x - 12;
+		touchconfig[GC_FORWARD].y = touch_dpad_y - (touch_dpad_w / 4);
+		touchconfig[GC_FORWARD].w = 40;
+		touchconfig[GC_FORWARD].h = 32;
+
+		// Down
+		touchconfig[GC_BACKWARD].x = x - 12;
+		touchconfig[GC_BACKWARD].y = (touch_dpad_y + touch_dpad_h) - (touch_dpad_w / 4);
+		touchconfig[GC_BACKWARD].w = 40;
+		touchconfig[GC_BACKWARD].h = 32;
+
+		// Left
+		touchconfig[GC_STRAFELEFT].x = touch_dpad_x - (touch_dpad_w / 4);
+		touchconfig[GC_STRAFELEFT].y = touch_dpad_y + (touch_dpad_w / 4);
+		touchconfig[GC_STRAFELEFT].w = 32;
+		touchconfig[GC_STRAFELEFT].h = 28;
+
+		// Right
+		touchconfig[GC_STRAFERIGHT].x = (touch_dpad_x + touch_dpad_w) - (touch_dpad_w / 4);
+		touchconfig[GC_STRAFERIGHT].y = touch_dpad_y + (touch_dpad_w / 4);
+		touchconfig[GC_STRAFERIGHT].w = 32;
+		touchconfig[GC_STRAFERIGHT].h = 28;
+
+		// Spin
+		touchconfig[GC_SPIN].x = 232;
+		touchconfig[GC_SPIN].y = 148;
+		touchconfig[GC_SPIN].w = 32;
+		touchconfig[GC_SPIN].h = 32;
+
+		// Jump
+		touchconfig[GC_JUMP].x = touchconfig[GC_SPIN].x + touchconfig[GC_SPIN].w + 16;
+		touchconfig[GC_JUMP].y = touchconfig[GC_SPIN].y;
+		touchconfig[GC_JUMP].w = 32;
+		touchconfig[GC_JUMP].h = 32;
+	}
+}
+#endif
 
 INT32 G_GetControlScheme(INT32 (*fromcontrols)[2], const INT32 *gclist, INT32 gclen)
 {

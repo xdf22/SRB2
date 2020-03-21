@@ -146,6 +146,19 @@ extern INT32 joyxmove[JOYAXISSET], joyymove[JOYAXISSET], joy2xmove[JOYAXISSET], 
 // current state of the keys: true if pushed
 extern UINT8 gamekeydown[NUMINPUTS];
 
+// Lactozilla: Touch input buttons
+#ifdef TOUCHINPUTS
+typedef struct
+{
+	INT32 x, y;
+	INT32 w, h;
+} touchconfig_t;
+
+extern touchconfig_t touchconfig[NUM_GAMECONTROLS];
+extern INT32 touch_dpad_x, touch_dpad_y, touch_dpad_w, touch_dpad_h;
+extern boolean touch_dpad_tiny;
+#endif
+
 // two key codes (or virtual key) per game control
 extern INT32 gamecontrol[NUM_GAMECONTROLS][2];
 extern INT32 gamecontrolbis[NUM_GAMECONTROLS][2]; // secondary splitscreen player
@@ -190,7 +203,12 @@ void G_ClearControlKeys(INT32 (*setupcontrols)[2], INT32 control);
 void G_ClearAllControlKeys(void);
 void Command_Setcontrol_f(void);
 void Command_Setcontrol2_f(void);
+
 void G_DefineDefaultControls(void);
+#ifdef TOUCHINPUTS
+void G_DefineTouchControls(void);
+#endif
+
 INT32 G_GetControlScheme(INT32 (*fromcontrols)[2], const INT32 *gclist, INT32 gclen);
 void G_CopyControls(INT32 (*setupcontrols)[2], INT32 (*fromcontrols)[2], const INT32 *gclist, INT32 gclen);
 void G_SaveKeySetting(FILE *f, INT32 (*fromcontrols)[2], INT32 (*fromcontrolsbis)[2]);

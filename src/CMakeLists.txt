@@ -191,6 +191,7 @@ endif()
 
 if(${CMAKE_SYSTEM} MATCHES "iOS")
 	add_definitions(-DIOS)
+	add_definitions(-DTOUCHINPUTS)
 endif()
 
 if("${SRB2_CONFIG_USE_GME}")
