@@ -13,6 +13,7 @@
 
 #include "doomdef.h"
 #include "doomstat.h"
+#include "g_game.h"
 #include "g_input.h"
 #include "keys.h"
 #include "hu_stuff.h" // need HUFONT start & end
@@ -42,10 +43,28 @@ INT32 joyxmove[JOYAXISSET], joyymove[JOYAXISSET], joy2xmove[JOYAXISSET], joy2ymo
 // current state of the keys: true if pushed
 UINT8 gamekeydown[NUMINPUTS];
 
-// Lactozilla: Touch input buttons
+// Lactozilla: Touch input
 #ifdef TOUCHINPUTS
-UINT8 touchfingers[NUMTOUCHFINGERS];
-touchconfig_t touchconfig[NUM_GAMECONTROLS];
+// Finger data
+touchfinger_t touchfingers[NUMTOUCHFINGERS];
+
+// Screen buttons
+touchconfig_t touchcontrols[NUM_GAMECONTROLS];
+touchconfig_t touchnavigation[NUMKEYS];
+
+// Input variables
+INT32 touch_dpad_x, touch_dpad_y, touch_dpad_w, touch_dpad_h;
+INT32 touchnav_dpad_x, touchnav_dpad_y, touchnav_dpad_w, touchnav_dpad_h;
+
+// Touch screen settings
+boolean touch_dpad_tiny;
+boolean touch_dpad_menu;
+boolean touch_menu_gestures;
+
+// Console variables for the touch screen
+consvar_t cv_dpadtiny = {"touch_dpad_tiny", "On", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, G_UpdateTouchControls, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_menudpad = {"touch_dpad_menu", "Off", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, G_UpdateTouchControls, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_menugestures = {"touch_menu_gestures", "Off", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, G_UpdateTouchControls, 0, NULL, NULL, 0, 0, NULL};
 #endif
 
 // two key codes (or virtual key) per game control
@@ -108,6 +127,19 @@ static dclick_t joy2dclicks[JOYBUTTONS + JOYHATS*4];
 // protos
 static UINT8 G_CheckDoubleClick(UINT8 state, dclick_t *dt);
 
+#ifdef TOUCHINPUTS
+boolean G_FingerTouchesButton(INT32 x, INT32 y, touchconfig_t *butt)
+{
+	fixed_t dupx = vid.dup*FRACUNIT;
+	fixed_t dupy = vid.dup*FRACUNIT;
+	INT32 tx = FixedMul(butt->x * FRACUNIT, dupx) / FRACUNIT;
+	INT32 ty = FixedMul(butt->y * FRACUNIT, dupy) / FRACUNIT;
+	INT32 tw = FixedMul(butt->w * FRACUNIT, dupx) / FRACUNIT;
+	INT32 th = FixedMul(butt->h * FRACUNIT, dupy) / FRACUNIT;
+	return (x >= tx && x <= tx + tw && y >= ty && y <= ty + th);
+}
+#endif
+
 //
 // Remaps the inputs to game controls.
 //
@@ -159,26 +191,28 @@ void G_MapEventsToControls(event_t *ev)
 			// ev->data3 is the finger's ID.
 			for (i = 0; i < NUM_GAMECONTROLS; i++)
 			{
+				touchconfig_t *butt = &touchcontrols[i];
 				INT32 x = ev->x;
 				INT32 y = ev->y;
-				touchconfig_t *butt = &touchconfig[i];
 
 				// In a touch motion event, simulate a key up event by clearing gamekeydown.
 				// This is done so that the buttons that are down don't 'stick'
 				// if you move your finger from a button to another.
-				gc = ev->y; // the finger ID
-				if (ev->type == ev_touchmotion && touchfingers[gc])
+				gc = ev->which; // the finger ID
+				if (ev->type == ev_touchmotion && touchfingers[gc].gamecontrol)
 				{
 					// Let go of this button.
-					gamekeydown[touchfingers[ev->y]] = 0;
-					touchfingers[ev->y] = 0;
+					gamekeydown[touchfingers[ev->which].gamecontrol] = 0;
+					touchfingers[ev->which].gamecontrol = 0;
 				}
 
 				// Check if your finger touches this button.
-				if (x >= butt->x && x <= butt->x + butt->w && y >= butt->y && y <= butt->y + butt->h)
+				if (G_FingerTouchesButton(x, y, butt))
 				{
 					gc = gamecontrol[i][0];
-					touchfingers[ev->y] = gc;
+					touchfingers[ev->which].x = x;
+					touchfingers[ev->which].y = y;
+					touchfingers[ev->which].gamecontrol = gc;
 					gamekeydown[gc] = 1;
 					break;
 				}
@@ -187,8 +221,8 @@ void G_MapEventsToControls(event_t *ev)
 
 		case ev_touchup:
 			// Let go of this button.
-			gamekeydown[touchfingers[ev->y]] = 0;
-			touchfingers[ev->y] = 0;
+			gamekeydown[touchfingers[ev->which].gamecontrol] = 0;
+			touchfingers[ev->which].gamecontrol = 0;
 			break;
 #endif
 
@@ -827,108 +861,208 @@ void G_DefineDefaultControls(void)
 	}
 
 #ifdef TOUCHINPUTS
-	touch_dpad_tiny = true;
-	G_DefineTouchControls();
+	CV_RegisterVar(&cv_dpadtiny);
+	CV_RegisterVar(&cv_menudpad);
+	CV_RegisterVar(&cv_menugestures);
+	G_UpdateTouchControls();
 #endif
 }
 
-// Lactozilla: Touch input buttons
+// Lactozilla: Touch input
 #ifdef TOUCHINPUTS
-INT32 touch_dpad_x, touch_dpad_y, touch_dpad_w, touch_dpad_h;
-boolean touch_dpad_tiny;
-
-void G_DefineTouchControls(void)
+void G_UpdateTouchSettings(void)
 {
+	touch_menu_gestures = !!cv_menugestures.value;
+	G_UpdateMenuTouchNavigation();
+}
+
+void G_UpdateMenuTouchNavigation(void)
+{
+	touch_dpad_tiny = !!cv_dpadtiny.value;
+	touch_dpad_menu = ((!touch_menu_gestures) ? (!!cv_menudpad.value) : false);
+}
+
+void G_UpdateTouchControls(void)
+{
+	G_UpdateTouchSettings();
+	G_DefineTouchControls();
+}
+
+static void G_DefineTouchGameControls(void)
+{
+	INT32 offs = (promptactive ? -16 : 0) * vid.dup;
+	INT32 rightalign = 0;
+	INT32 bottomalign = 0;
+
+	if (vid.width != BASEVIDWIDTH * vid.dup)
+		rightalign = (vid.width - (BASEVIDWIDTH * vid.dup)) / vid.dup;
+	if (vid.height != BASEVIDHEIGHT * vid.dup)
+		bottomalign = (vid.height - (BASEVIDHEIGHT * vid.dup)) / vid.dup;
+
+	offs += bottomalign;
+
 	if (touch_dpad_tiny)
 	{
 		touch_dpad_x = 24;
-		touch_dpad_y = 128;
+		touch_dpad_y = 128 + offs;
 		touch_dpad_w = 32;
 		touch_dpad_h = 32;
 
 		// Up
-		touchconfig[GC_FORWARD].x = touch_dpad_x + 8;
-		touchconfig[GC_FORWARD].y = touch_dpad_y - 8;
-		touchconfig[GC_FORWARD].w = 20;
-		touchconfig[GC_FORWARD].h = 16;
+		touchcontrols[GC_FORWARD].x = touch_dpad_x + 8;
+		touchcontrols[GC_FORWARD].y = touch_dpad_y - 8;
+		touchcontrols[GC_FORWARD].w = 20;
+		touchcontrols[GC_FORWARD].h = 16;
 
 		// Down
-		touchconfig[GC_BACKWARD].x = touch_dpad_x + 8;
-		touchconfig[GC_BACKWARD].y = touch_dpad_y + 24;
-		touchconfig[GC_BACKWARD].w = 20;
-		touchconfig[GC_BACKWARD].h = 16;
+		touchcontrols[GC_BACKWARD].x = touch_dpad_x + 8;
+		touchcontrols[GC_BACKWARD].y = touch_dpad_y + 24;
+		touchcontrols[GC_BACKWARD].w = 20;
+		touchcontrols[GC_BACKWARD].h = 16;
 
 		// Left
-		touchconfig[GC_STRAFELEFT].x = touch_dpad_x - 8;
-		touchconfig[GC_STRAFELEFT].y = touch_dpad_y + 8;
-		touchconfig[GC_STRAFELEFT].w = 16;
-		touchconfig[GC_STRAFELEFT].h = 14;
+		touchcontrols[GC_STRAFELEFT].x = touch_dpad_x - 8;
+		touchcontrols[GC_STRAFELEFT].y = touch_dpad_y + 8;
+		touchcontrols[GC_STRAFELEFT].w = 16;
+		touchcontrols[GC_STRAFELEFT].h = 14;
 
 		// Right
-		touchconfig[GC_STRAFERIGHT].x = touch_dpad_x + 24;
-		touchconfig[GC_STRAFERIGHT].y = touch_dpad_y + 8;
-		touchconfig[GC_STRAFERIGHT].w = 16;
-		touchconfig[GC_STRAFERIGHT].h = 14;
+		touchcontrols[GC_STRAFERIGHT].x = touch_dpad_x + 24;
+		touchcontrols[GC_STRAFERIGHT].y = touch_dpad_y + 8;
+		touchcontrols[GC_STRAFERIGHT].w = 16;
+		touchcontrols[GC_STRAFERIGHT].h = 14;
 
 		// Spin
-		touchconfig[GC_SPIN].x = 232;
-		touchconfig[GC_SPIN].y = 148;
-		touchconfig[GC_SPIN].w = 24;
-		touchconfig[GC_SPIN].h = 24;
+		touchcontrols[GC_SPIN].x = 232 + rightalign;
+		touchcontrols[GC_SPIN].y = 148 + offs;
+		touchcontrols[GC_SPIN].w = 24;
+		touchcontrols[GC_SPIN].h = 24;
 
 		// Jump
-		touchconfig[GC_JUMP].x = touchconfig[GC_SPIN].x + touchconfig[GC_SPIN].w + 12;
-		touchconfig[GC_JUMP].y = touchconfig[GC_SPIN].y;
-		touchconfig[GC_JUMP].w = 24;
-		touchconfig[GC_JUMP].h = 24;
+		touchcontrols[GC_JUMP].x = (touchcontrols[GC_SPIN].x + touchcontrols[GC_SPIN].w + 12);
+		touchcontrols[GC_JUMP].y = touchcontrols[GC_SPIN].y;
+		touchcontrols[GC_JUMP].w = 24;
+		touchcontrols[GC_JUMP].h = 24;
 	}
 	else
 	{
 		INT32 x;
 
 		touch_dpad_x = 24;
-		touch_dpad_y = 92;
+		touch_dpad_y = 92 + offs;
 		touch_dpad_w = 64;
 		touch_dpad_h = 64;
 
 		x = (touch_dpad_x + touch_dpad_w) - (touch_dpad_w / 2);
 
 		// Up
-		touchconfig[GC_FORWARD].x = x - 12;
-		touchconfig[GC_FORWARD].y = touch_dpad_y - (touch_dpad_w / 4);
-		touchconfig[GC_FORWARD].w = 40;
-		touchconfig[GC_FORWARD].h = 32;
+		touchcontrols[GC_FORWARD].x = x - 12;
+		touchcontrols[GC_FORWARD].y = touch_dpad_y - (touch_dpad_w / 4);
+		touchcontrols[GC_FORWARD].w = 40;
+		touchcontrols[GC_FORWARD].h = 32;
 
 		// Down
-		touchconfig[GC_BACKWARD].x = x - 12;
-		touchconfig[GC_BACKWARD].y = (touch_dpad_y + touch_dpad_h) - (touch_dpad_w / 4);
-		touchconfig[GC_BACKWARD].w = 40;
-		touchconfig[GC_BACKWARD].h = 32;
+		touchcontrols[GC_BACKWARD].x = x - 12;
+		touchcontrols[GC_BACKWARD].y = (touch_dpad_y + touch_dpad_h) - (touch_dpad_w / 4);
+		touchcontrols[GC_BACKWARD].w = 40;
+		touchcontrols[GC_BACKWARD].h = 32;
 
 		// Left
-		touchconfig[GC_STRAFELEFT].x = touch_dpad_x - (touch_dpad_w / 4);
-		touchconfig[GC_STRAFELEFT].y = touch_dpad_y + (touch_dpad_w / 4);
-		touchconfig[GC_STRAFELEFT].w = 32;
-		touchconfig[GC_STRAFELEFT].h = 28;
+		touchcontrols[GC_STRAFELEFT].x = touch_dpad_x - (touch_dpad_w / 4);
+		touchcontrols[GC_STRAFELEFT].y = touch_dpad_y + (touch_dpad_w / 4);
+		touchcontrols[GC_STRAFELEFT].w = 32;
+		touchcontrols[GC_STRAFELEFT].h = 28;
 
 		// Right
-		touchconfig[GC_STRAFERIGHT].x = (touch_dpad_x + touch_dpad_w) - (touch_dpad_w / 4);
-		touchconfig[GC_STRAFERIGHT].y = touch_dpad_y + (touch_dpad_w / 4);
-		touchconfig[GC_STRAFERIGHT].w = 32;
-		touchconfig[GC_STRAFERIGHT].h = 28;
+		touchcontrols[GC_STRAFERIGHT].x = (touch_dpad_x + touch_dpad_w) - (touch_dpad_w / 4);
+		touchcontrols[GC_STRAFERIGHT].y = touch_dpad_y + (touch_dpad_w / 4);
+		touchcontrols[GC_STRAFERIGHT].w = 32;
+		touchcontrols[GC_STRAFERIGHT].h = 28;
 
 		// Spin
-		touchconfig[GC_SPIN].x = 232;
-		touchconfig[GC_SPIN].y = 148;
-		touchconfig[GC_SPIN].w = 32;
-		touchconfig[GC_SPIN].h = 32;
+		touchcontrols[GC_SPIN].x = 232 + rightalign;
+		touchcontrols[GC_SPIN].y = 148 + offs;
+		touchcontrols[GC_SPIN].w = 32;
+		touchcontrols[GC_SPIN].h = 32;
 
 		// Jump
-		touchconfig[GC_JUMP].x = touchconfig[GC_SPIN].x + touchconfig[GC_SPIN].w + 16;
-		touchconfig[GC_JUMP].y = touchconfig[GC_SPIN].y;
-		touchconfig[GC_JUMP].w = 32;
-		touchconfig[GC_JUMP].h = 32;
+		touchcontrols[GC_JUMP].x = (touchcontrols[GC_SPIN].x + touchcontrols[GC_SPIN].w + 16);
+		touchcontrols[GC_JUMP].y = touchcontrols[GC_SPIN].y;
+		touchcontrols[GC_JUMP].w = 32;
+		touchcontrols[GC_JUMP].h = 32;
 	}
+
+	touchcontrols[GC_FORWARD].dpad = true;
+	touchcontrols[GC_BACKWARD].dpad = true;
+	touchcontrols[GC_STRAFELEFT].dpad = true;
+	touchcontrols[GC_STRAFERIGHT].dpad = true;
+}
+
+static void G_DefineTouchNavigation(void)
+{
+	INT32 left = 4;
+	INT32 rightalign = 0;
+	if (vid.width != BASEVIDWIDTH * vid.dup)
+		rightalign = (vid.width - (BASEVIDWIDTH * vid.dup)) / vid.dup;
+
+	touchnav_dpad_x = (BASEVIDWIDTH - touchnav_dpad_w - 12) + rightalign;
+	touchnav_dpad_y = 12;
+	touchnav_dpad_w = 32;
+	touchnav_dpad_h = 32;
+
+	// Up
+	touchnavigation[KEY_UPARROW].x = touchnav_dpad_x + 8;
+	touchnavigation[KEY_UPARROW].y = touchnav_dpad_y - 8;
+	touchnavigation[KEY_UPARROW].w = 20;
+	touchnavigation[KEY_UPARROW].h = 16;
+	touchnavigation[KEY_UPARROW].dpad = true;
+
+	// Down
+	touchnavigation[KEY_DOWNARROW].x = touchnav_dpad_x + 8;
+	touchnavigation[KEY_DOWNARROW].y = touchnav_dpad_y + 24;
+	touchnavigation[KEY_DOWNARROW].w = 20;
+	touchnavigation[KEY_DOWNARROW].h = 16;
+	touchnavigation[KEY_DOWNARROW].dpad = true;
+
+	// Left
+	touchnavigation[KEY_LEFTARROW].x = touchnav_dpad_x - 8;
+	touchnavigation[KEY_LEFTARROW].y = touchnav_dpad_y + 8;
+	touchnavigation[KEY_LEFTARROW].w = 16;
+	touchnavigation[KEY_LEFTARROW].h = 14;
+	touchnavigation[KEY_LEFTARROW].dpad = true;
+
+	// Right
+	touchnavigation[KEY_RIGHTARROW].x = touchnav_dpad_x + 24;
+	touchnavigation[KEY_RIGHTARROW].y = touchnav_dpad_y + 8;
+	touchnavigation[KEY_RIGHTARROW].w = 16;
+	touchnavigation[KEY_RIGHTARROW].h = 14;
+	touchnavigation[KEY_RIGHTARROW].dpad = true;
+
+	// Back
+	touchnavigation[KEY_ESCAPE].x = left;
+	touchnavigation[KEY_ESCAPE].y = 4;
+	touchnavigation[KEY_ESCAPE].w = 24;
+	touchnavigation[KEY_ESCAPE].h = 24;
+
+	// Confirm
+	touchnavigation[KEY_ENTER].w = 24;
+	touchnavigation[KEY_ENTER].h = 24;
+	if (touch_dpad_menu)
+	{
+		touchnavigation[KEY_ENTER].x = (touchnav_dpad_x + (touchnav_dpad_w / 2)) - (touchnavigation[KEY_ENTER].w/2);
+		touchnavigation[KEY_ENTER].y = (touchnav_dpad_y + touchnav_dpad_h + touchnavigation[KEY_ENTER].h);
+	}
+	else
+	{
+		touchnavigation[KEY_ENTER].x = (BASEVIDWIDTH - touchnavigation[KEY_ENTER].w - left);
+		touchnavigation[KEY_ENTER].y = touchnavigation[KEY_ESCAPE].y;
+	}
+}
+
+void G_DefineTouchControls(void)
+{
+	G_DefineTouchGameControls();
+	G_DefineTouchNavigation();
 }
 #endif
 

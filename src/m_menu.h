@@ -352,6 +352,14 @@ void M_ClearMenus(boolean callexitmenufunc);
 // Maybe this goes here????? Who knows.
 boolean M_MouseNeeded(void);
 
+// What about this?
+#ifdef TOUCHINPUTS
+void M_UpdateTouchNavigation(void);
+boolean M_ForceGestures(void);
+INT32 M_InvertHorizontalGesture(void);
+INT32 M_InvertVerticalGesture(void);
+#endif
+
 extern I_mutex m_menu_mutex;
 
 extern menu_t *currentMenu;

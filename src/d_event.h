@@ -42,6 +42,7 @@ typedef struct
 	INT32 key; // keys/mouse/joystick buttons
 	INT32 x; // mouse/joystick x move
 	INT32 y; // mouse/joystick y move
+	UINT8 which;
 	boolean repeated; // key repeat
 } event_t;
 

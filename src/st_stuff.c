@@ -1258,12 +1258,24 @@ static void ST_drawInput(void)
 }
 
 #ifdef TOUCHINPUTS
-static void ST_drawTouchInput(void)
+
+#define SCALEBUTTONS(touch) \
+	x = FixedMul(touch->x * FRACUNIT, dupx) / FRACUNIT; \
+	y = FixedMul(touch->y * FRACUNIT, dupy) / FRACUNIT; \
+	w = FixedMul(touch->w * FRACUNIT, dupx) / FRACUNIT; \
+	h = FixedMul(touch->h * FRACUNIT, dupy) / FRACUNIT;
+
+void ST_drawTouchDPad(
+					INT32 dpadx, INT32 dpady, INT32 dpadw, INT32 dpadh,
+					touchconfig_t *tleft, boolean moveleft,
+					touchconfig_t *tright, boolean moveright,
+					touchconfig_t *tup, boolean moveup,
+					touchconfig_t *tdown, boolean movedown,
+					boolean backing, INT32 flags, INT32 accent)
 {
+	INT32 x, y, w, h;
 	fixed_t dupx = vid.dup*FRACUNIT;
 	fixed_t dupy = vid.dup*FRACUNIT;
-	const INT32 flags = V_NOSCALESTART;
-	const INT32 accent = (stplyr->skincolor ? skincolors[stplyr->skincolor-1].ramp[4] : 0);
 	const INT32 shadow = vid.dup;
 	INT32 col, offs;
 	INT32 base, ybase;
@@ -1271,47 +1283,26 @@ static void ST_drawTouchInput(void)
 	INT32 udw;
 	INT32 i, j;
 
-	INT32 x = FixedMul(touch_dpad_x * FRACUNIT, dupx) / FRACUNIT;
-	INT32 y = FixedMul(touch_dpad_y * FRACUNIT, dupy) / FRACUNIT;
-	INT32 w = FixedMul(touch_dpad_w * FRACUNIT, dupx) / FRACUNIT;
-	INT32 h = FixedMul(touch_dpad_h * FRACUNIT, dupy) / FRACUNIT;
-
-	touchconfig_t *tleft = &touchconfig[GC_STRAFELEFT];
-	touchconfig_t *tright = &touchconfig[GC_STRAFERIGHT];
-	touchconfig_t *tup = &touchconfig[GC_FORWARD];
-	touchconfig_t *tdown = &touchconfig[GC_BACKWARD];
-
-	touchconfig_t *tjump = &touchconfig[GC_JUMP];
-	touchconfig_t *tspin = &touchconfig[GC_SPIN];
-
-	if (stplyr->powers[pw_carry] == CR_NIGHTSMODE)
-		y -= FixedMul(16 * FRACUNIT, dupy) / FRACUNIT;
-
-	if (F_GetPromptHideHud(y))
-		return;
-
-#define CENTERPOS \
-	if (vid.height != BASEVIDHEIGHT * vid.dup) \
-		y += (vid.height - (BASEVIDHEIGHT * vid.dup)); \
+#define THISMACRONEEDSANAME(touch) \
+	SCALEBUTTONS(touch); \
+	xslant = FixedMul((touch->w/2) * FRACUNIT, dupx) / FRACUNIT; \
+	yslant = FixedMul((touch->h/2) * FRACUNIT, dupy) / FRACUNIT; \
 
 	// O backing
-	CENTERPOS;
-	V_DrawFill(x, y-1, w, h, flags|20);
-	V_DrawFill(x, y+h-1, w, shadow, flags|29);
+	if (backing)
+	{
+		x = FixedMul(dpadx * FRACUNIT, dupx) / FRACUNIT;
+		y = FixedMul(dpady * FRACUNIT, dupy) / FRACUNIT;
+		w = FixedMul(dpadw * FRACUNIT, dupx) / FRACUNIT;
+		h = FixedMul(dpadh * FRACUNIT, dupy) / FRACUNIT;
+		V_DrawFill(x, y-1, w, h, flags|20);
+		V_DrawFill(x, y+h-1, w, shadow, flags|29);
+	}
 
 	if (vid.dup == 1)
 		udw = 2;
 	else
 		udw = (vid.dup * 3);
-
-#define THISMACRONEEDSANAME(touch) \
-	x = FixedMul(touch->x * FRACUNIT, dupx) / FRACUNIT; \
-	y = FixedMul(touch->y * FRACUNIT, dupy) / FRACUNIT; \
-	w = FixedMul(touch->w * FRACUNIT, dupx) / FRACUNIT; \
-	h = FixedMul(touch->h * FRACUNIT, dupy) / FRACUNIT; \
-	xslant = FixedMul((touch->w/2) * FRACUNIT, dupx) / FRACUNIT; \
-	yslant = FixedMul((touch->h/2) * FRACUNIT, dupy) / FRACUNIT; \
-	CENTERPOS;
 
 	// <
 	THISMACRONEEDSANAME(tleft);
@@ -1324,7 +1315,7 @@ static void ST_drawTouchInput(void)
 	for (i = 0; i < xslant; i++) \
 		V_DrawFill(x+base+i+(vid.dup), (y+i)+offset, vid.dup, h-(i*2), color|flags);
 
-	if (stplyr->cmd.sidemove < 0)
+	if (moveleft)
 	{
 		col = accent;
 		offs = shadow;
@@ -1355,7 +1346,7 @@ static void ST_drawTouchInput(void)
 	for (j = 0; j < yslant; j++) \
 		V_DrawFill(x+i+j+udw, y+offset, 1, (ybase-(j+1)), color|flags); \
 
-	if (stplyr->cmd.forwardmove > 0)
+	if (moveup)
 	{
 		col = accent;
 		offs = shadow;
@@ -1380,7 +1371,7 @@ static void ST_drawTouchInput(void)
 	for (i = 0; i < xslant; i++) \
 		V_DrawFill(x+(base-(vid.dup))-i-(vid.dup), (y+i)+offset, vid.dup, h-(i*2), color|flags);
 
-	if (stplyr->cmd.sidemove > 0)
+	if (moveright)
 	{
 		col = accent;
 		offs = shadow;
@@ -1411,7 +1402,7 @@ static void ST_drawTouchInput(void)
 	for (j = 0; j < yslant; j++) \
 		V_DrawFill(x+i+j+udw, ((y+(yslant-i))+j) + 1 + offset, 1, (ybase-(j+1)), color|flags);
 
-	if (stplyr->cmd.forwardmove < 0)
+	if (movedown)
 	{
 		col = accent;
 		offs = shadow;
@@ -1425,15 +1416,45 @@ static void ST_drawTouchInput(void)
 
 	drawdownbutton(col, offs);
 
-#undef CENTERPOS
-#define CENTERPOS \
-	if (vid.width != BASEVIDWIDTH * vid.dup) \
-		x += (vid.width - (BASEVIDWIDTH * vid.dup)); \
-	if (vid.height != BASEVIDHEIGHT * vid.dup) \
-		y += (vid.height - (BASEVIDHEIGHT * vid.dup)); \
+#undef drawdownbutton
+#undef drawrightbutton
+#undef drawupbutton
+#undef drawleftbutton
+#undef THISMACRONEEDSANAME
+}
+
+void ST_drawTouchGameInput(void)
+{
+	fixed_t dupx = vid.dup*FRACUNIT;
+	fixed_t dupy = vid.dup*FRACUNIT;
+	const INT32 flags = V_NOSCALESTART;
+	const INT32 accent = (stplyr->skincolor ? skincolors[stplyr->skincolor-1].ramp[4] : 0);
+	const INT32 shadow = vid.dup;
+	INT32 col, offs;
+	INT32 x, y, w, h;
+
+	touchconfig_t *tleft = &touchcontrols[GC_STRAFELEFT];
+	touchconfig_t *tright = &touchcontrols[GC_STRAFERIGHT];
+	touchconfig_t *tup = &touchcontrols[GC_FORWARD];
+	touchconfig_t *tdown = &touchcontrols[GC_BACKWARD];
+
+	touchconfig_t *tjump = &touchcontrols[GC_JUMP];
+	touchconfig_t *tspin = &touchcontrols[GC_SPIN];
+
+	if (promptblockcontrols)
+		return;
+
+	ST_drawTouchDPad(
+		touch_dpad_x, touch_dpad_y,
+		touch_dpad_w, touch_dpad_h,
+		tleft, (stplyr->cmd.sidemove < 0),
+		tright, (stplyr->cmd.sidemove > 0),
+		tup, (stplyr->cmd.forwardmove > 0),
+		tdown, (stplyr->cmd.forwardmove < 0),
+		true, flags, accent);
 
 #define drawbutt(control, butt, symb) \
-	THISMACRONEEDSANAME(control); \
+	SCALEBUTTONS(control); \
 	if (stplyr->cmd.buttons & butt) \
 	{ \
 		col = accent; \
@@ -1452,14 +1473,64 @@ static void ST_drawTouchInput(void)
 	drawbutt(tspin, BT_SPIN,  'S');
 
 #undef drawbutt
-#undef drawdownbutton
-#undef drawrightbutton
-#undef drawupbutton
-#undef drawleftbutton
-#undef THISMACRONEEDSANAME
-#undef CENTERPOS
-
 }
+
+void ST_drawTouchMenuInput(void)
+{
+	fixed_t dupx = vid.dup*FRACUNIT;
+	fixed_t dupy = vid.dup*FRACUNIT;
+	const INT32 flags = V_NOSCALESTART;
+	const INT32 accent = skincolors[(cv_playercolor.value)-1].ramp[4];
+	const INT32 shadow = vid.dup;
+	INT32 col, offs;
+	INT32 x, y, w, h;
+
+	touchconfig_t *tleft, *tright, *tup, *tdown;
+	touchconfig_t *tback = &touchnavigation[KEY_ESCAPE];
+	touchconfig_t *tconfirm = &touchnavigation[KEY_ENTER];
+
+	// Draw the menu d-pad
+	if (touch_dpad_menu)
+	{
+		tleft = &touchnavigation[KEY_LEFTARROW];
+		tright = &touchnavigation[KEY_RIGHTARROW];
+		tup = &touchnavigation[KEY_UPARROW];
+		tdown = &touchnavigation[KEY_DOWNARROW];
+
+		// touchconfig_t.pressed is actually never set, maybe later.
+		ST_drawTouchDPad(
+			touchnav_dpad_x, touchnav_dpad_y,
+			touchnav_dpad_w, touchnav_dpad_h,
+			tleft, tleft->pressed,
+			tright, tright->pressed,
+			tup, tup->pressed,
+			tdown, tdown->pressed,
+			true, flags, accent);
+	}
+
+#define drawbutt(control, symb) \
+	SCALEBUTTONS(control); \
+	if (control->pressed) \
+	{ \
+		col = accent; \
+		offs = shadow; \
+	} \
+	else \
+	{ \
+		col = 16; \
+		offs = 0; \
+		V_DrawFill(x, y + h, w, shadow, 29|flags); \
+	} \
+	V_DrawFill(x, y + offs, w, h, col|flags); \
+	V_DrawCharacter((x + (w / 2)) - ((8*vid.dup) / 2), (y + (h / 2)) - ((8*vid.dup) / 2) + offs, symb|flags, false);
+
+	drawbutt(tback, 'B');
+	drawbutt(tconfirm, 'C');
+
+#undef drawbutt
+}
+
+#undef SCALEBUTTONS
 #endif
 
 static boolean lt_active = false;
@@ -3053,7 +3124,7 @@ static void ST_overlayDrawer(void)
 		ST_drawInput();
 #ifdef TOUCHINPUTS
 	else
-		ST_drawTouchInput();
+		ST_drawTouchGameInput();
 #endif
 
 	ST_drawDebugInfo();
