@@ -910,7 +910,7 @@ static void G_DefineTouchGameControls(void)
 	offs += bottomalign;
 
 	// clear all
-	memset(touchcontrols, 0x00, sizeof(num_gamecontrols) * NUMKEYS);
+	memset(touchcontrols, 0x00, sizeof(touchconfig_t) * NUM_GAMECONTROLS);
 
 	if (touch_dpad_tiny)
 	{
@@ -991,7 +991,7 @@ static void G_DefineTouchGameControls(void)
 		touchcontrols[GC_STRAFERIGHT].h = 28;
 
 		// Spin
-		touchcontrols[GC_SPIN].x = 232 + rightalign;
+		touchcontrols[GC_SPIN].x = (232 + rightalign) - 12;
 		touchcontrols[GC_SPIN].y = 148 + offs;
 		touchcontrols[GC_SPIN].w = 32;
 		touchcontrols[GC_SPIN].h = 32;
@@ -1068,7 +1068,7 @@ static void G_DefineTouchNavigation(void)
 	}
 	else
 	{
-		touchnavigation[KEY_ENTER].x = ((vid.width / vid.dupx) - touchnavigation[KEY_ENTER].w - left);
+		touchnavigation[KEY_ENTER].x = ((vid.width / vid.dup) - touchnavigation[KEY_ENTER].w - left);
 		touchnavigation[KEY_ENTER].y = touchnavigation[KEY_ESCAPE].y;
 	}
 }
