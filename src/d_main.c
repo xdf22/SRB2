@@ -716,6 +716,11 @@ void D_SRB2Loop(void)
 	I_DoStartupMouse();
 #endif
 
+#ifdef TOUCHINPUTS
+	CONS_Printf("I_InitTouchScreen()...\n");
+	I_InitTouchScreen();
+#endif
+
 	I_UpdateTime(cv_timescale.value);
 	oldentertics = I_GetTime();
 
