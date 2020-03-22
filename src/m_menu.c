@@ -3370,7 +3370,6 @@ boolean M_Responder(event_t *ev)
 				// Handle screen regions
 				if (!touch_menu_gestures && (!touch_dpad_menu))
 				{
-					boolean touchsides = false;
 					INT32 sides = (vid.width / 4);
 
 					// Handle horizontal input
@@ -3383,7 +3382,7 @@ boolean M_Responder(event_t *ev)
 					}
 					else
 					{
-						// up / down
+						// Handle vertical input
 						if (y >= (vid.height / 2))
 							touchfingers[finger].input = KEY_DOWNARROW;
 						else
