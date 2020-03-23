@@ -1131,9 +1131,6 @@ void I_GetEvent(void)
 			case SDL_FINGERUP:
 				Impl_HandleTouchEvent(evt.tfinger);
 				break;
-			case SDL_TEXTINPUT:
-				Impl_HandleTextInput(evt.text);
-				break;
 #endif
 #if 0
 			case SDL_JOYHATMOTION:
