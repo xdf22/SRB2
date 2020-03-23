@@ -27,6 +27,7 @@
 #include "console.h"
 #include "s_sound.h"
 #include "i_system.h"
+#include "i_time.h"
 #include "m_menu.h"
 #include "m_cheat.h"
 #include "m_misc.h" // moviemode
@@ -1441,6 +1442,9 @@ void ST_drawTouchGameInput(void)
 	touchconfig_t *tjump = &touchcontrols[GC_JUMP];
 	touchconfig_t *tspin = &touchcontrols[GC_SPIN];
 
+	if (!G_InGameInput())
+		return;
+
 	if (promptblockcontrols)
 		return;
 
@@ -1484,33 +1488,14 @@ void ST_drawTouchMenuInput(void)
 	const INT32 shadow = vid.dup;
 	INT32 col, offs;
 	INT32 x, y, w, h;
+	patch_t *font;
 
-	touchconfig_t *tleft, *tright, *tup, *tdown;
 	touchconfig_t *tback = &touchnavigation[KEY_ESCAPE];
 	touchconfig_t *tconfirm = &touchnavigation[KEY_ENTER];
 
-	// Draw the menu d-pad
-	if (touch_dpad_menu)
-	{
-		tleft = &touchnavigation[KEY_LEFTARROW];
-		tright = &touchnavigation[KEY_RIGHTARROW];
-		tup = &touchnavigation[KEY_UPARROW];
-		tdown = &touchnavigation[KEY_DOWNARROW];
-
-		// touchconfig_t.pressed is actually never set, maybe later.
-		ST_drawTouchDPad(
-			touchnav_dpad_x, touchnav_dpad_y,
-			touchnav_dpad_w, touchnav_dpad_h,
-			tleft, tleft->pressed,
-			tright, tright->pressed,
-			tup, tup->pressed,
-			tdown, tdown->pressed,
-			true, flags, accent);
-	}
-
 #define drawbutt(control, symb) \
 	SCALEBUTTONS(control); \
-	if (control->pressed) \
+	if (control->pressed > I_GetTime()) \
 	{ \
 		col = accent; \
 		offs = shadow; \
@@ -1521,11 +1506,14 @@ void ST_drawTouchMenuInput(void)
 		offs = 0; \
 		V_DrawFill(x, y + h, w, shadow, 29|flags); \
 	} \
+	font = hu_font.chars[toupper(symb) - FONTSTART]; \
 	V_DrawFill(x, y + offs, w, h, col|flags); \
-	V_DrawCharacter((x + (w / 2)) - ((8*vid.dup) / 2), (y + (h / 2)) - ((8*vid.dup) / 2) + offs, symb|flags, false);
+	V_DrawCharacter((x + (w / 2)) - ((SHORT(font->width)*vid.dup) / 2), \
+					(y + (h / 2)) - ((SHORT(font->height)*vid.dup) / 2) + offs, \
+					symb|flags, false);
 
-	drawbutt(tback, 'B');
-	drawbutt(tconfirm, 'C');
+	drawbutt(tback, '>');
+	drawbutt(tconfirm, '<');
 
 #undef drawbutt
 }

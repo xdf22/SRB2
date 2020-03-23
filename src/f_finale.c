@@ -4291,7 +4291,7 @@ void F_EndTextPrompt(boolean forceexec, boolean noexec)
 	callpromptnum = callpagenum = callplayer = INT32_MAX;
 
 #ifdef TOUCHINPUTS
-	G_DefineTouchControls();
+	G_UpdateTouchControls();
 #endif
 
 	if (promptwasactive)
@@ -4388,7 +4388,7 @@ void F_StartTextPrompt(INT32 promptnum, INT32 pagenum, mobj_t *mo, UINT16 postex
 		}
 
 #ifdef TOUCHINPUTS
-		G_DefineTouchControls();
+		G_UpdateTouchControls();
 		memset(gamekeydown, 0, sizeof (gamekeydown)); // No, this is not a hack at all. I don't know what you're talking about.
 #endif
 	}

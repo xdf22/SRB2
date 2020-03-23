@@ -43,7 +43,6 @@ INT32 joyxmove[JOYAXISSET], joyymove[JOYAXISSET], joy2xmove[JOYAXISSET], joy2ymo
 // current state of the keys: true if pushed
 UINT8 gamekeydown[NUMINPUTS];
 
-// Lactozilla: Touch input
 #ifdef TOUCHINPUTS
 // Finger data
 touchfinger_t touchfingers[NUMTOUCHFINGERS];
@@ -54,16 +53,13 @@ touchconfig_t touchnavigation[NUMKEYS];
 
 // Input variables
 INT32 touch_dpad_x, touch_dpad_y, touch_dpad_w, touch_dpad_h;
-INT32 touchnav_dpad_x, touchnav_dpad_y, touchnav_dpad_w, touchnav_dpad_h;
 
 // Touch screen settings
 boolean touch_dpad_tiny;
-boolean touch_dpad_menu;
 boolean touch_camera;
 
 // Console variables for the touch screen
 consvar_t cv_dpadtiny = {"touch_dpad_tiny", "On", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, G_UpdateTouchControls, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_menudpad = {"touch_dpad_menu", "Off", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, G_UpdateTouchControls, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_touchcamera = {"touch_camera", "On", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, G_UpdateTouchControls, 0, NULL, NULL, 0, 0, NULL};
 
 // Touch screen sensitivity
@@ -198,7 +194,7 @@ void G_MapEventsToControls(event_t *ev)
 		case ev_touchdown:
 		case ev_touchmotion:
 			// Ignore when the menu, console, or chat window are open
-			if (menuactive || CON_Ready() || chat_on)
+			if (!G_InGameInput())
 				break;
 
 			// Lactozilla: Find every on-screen button and
@@ -283,13 +279,16 @@ void G_MapEventsToControls(event_t *ev)
 #endif
 
 		case ev_mouse: // buttons are virtual keys
-			mouse.rdx = ev->x;
-			mouse.rdy = ev->y;
+			if (!G_InGameInput())
+				break;
+			mouse.rdx = (INT32)(ev->x*((cv_mousesens.value*cv_mousesens.value)/110.0f + 0.1f));
+			mouse.rdy = (INT32)(ev->y*((cv_mousesens.value*cv_mousesens.value)/110.0f + 0.1f));
+			//mlooky = (INT32)(ev->y*((cv_mouseysenßs.value*cv_mousesens.value)/110.0f + 0.1f));
 			break;
 
 		case ev_joystick: // buttons are virtual keys
 			i = ev->key;
-			if (i >= JOYAXISSET || menuactive || CON_Ready() || chat_on || ignoregameinputs)
+			if (i >= JOYAXISSET || !G_InGameInput() || ignoregameinputs)
 				break;
 			if (ev->x != INT32_MAX) joyxmove[i] = ev->x;
 			if (ev->y != INT32_MAX) joyymove[i] = ev->y;
@@ -297,14 +296,14 @@ void G_MapEventsToControls(event_t *ev)
 
 		case ev_joystick2: // buttons are virtual keys
 			i = ev->key;
-			if (i >= JOYAXISSET || menuactive || CON_Ready() || chat_on || ignoregameinputs)
+			if (i >= JOYAXISSET || !G_InGameInput() || ignoregameinputs)
 				break;
 			if (ev->x != INT32_MAX) joy2xmove[i] = ev->x;
 			if (ev->y != INT32_MAX) joy2ymove[i] = ev->y;
 			break;
 
 		case ev_mouse2: // buttons are virtual keys
-			if (menuactive || CON_Ready() || chat_on)
+			if (!G_InGameInput())
 				break;
 			mouse2.rdx = ev->x;
 			mouse2.rdy = ev->y;
@@ -918,7 +917,6 @@ void G_DefineDefaultControls(void)
 
 #ifdef TOUCHINPUTS
 	CV_RegisterVar(&cv_dpadtiny);
-	CV_RegisterVar(&cv_menudpad);
 	CV_RegisterVar(&cv_touchcamera);
 	G_UpdateTouchControls();
 #endif
@@ -926,22 +924,16 @@ void G_DefineDefaultControls(void)
 
 // Lactozilla: Touch input
 #ifdef TOUCHINPUTS
-void G_UpdateTouchSettings(void)
-{
-	touch_camera = (cv_usemouse.value ? false : (!!cv_touchcamera.value));
-	G_UpdateMenuTouchNavigation();
-}
-
-void G_UpdateMenuTouchNavigation(void)
+void G_SetupTouchSettings(void)
 {
 	touch_dpad_tiny = !!cv_dpadtiny.value;
-	touch_dpad_menu = !!cv_menudpad.value;
+	touch_camera = (cv_usemouse.value ? false : (!!cv_touchcamera.value));
 }
 
 void G_UpdateTouchControls(void)
 {
-	G_UpdateTouchSettings();
-	G_DefineTouchControls();
+	G_SetupTouchSettings();
+	G_DefineTouchButtons();
 }
 
 static void G_DefineTouchGameControls(void)
@@ -1060,45 +1052,9 @@ static void G_DefineTouchGameControls(void)
 static void G_DefineTouchNavigation(void)
 {
 	INT32 left = 4;
-	INT32 rightalign = 0;
-	if (vid.width != BASEVIDWIDTH * vid.dup)
-		rightalign = (vid.width - (BASEVIDWIDTH * vid.dup)) / vid.dup;
-
-	touchnav_dpad_x = (BASEVIDWIDTH - touchnav_dpad_w - 12) + rightalign;
-	touchnav_dpad_y = 12;
-	touchnav_dpad_w = 32;
-	touchnav_dpad_h = 32;
 
 	// clear all
 	memset(touchnavigation, 0x00, sizeof(touchconfig_t) * NUMKEYS);
-
-	// Up
-	touchnavigation[KEY_UPARROW].x = touchnav_dpad_x + 8;
-	touchnavigation[KEY_UPARROW].y = touchnav_dpad_y - 8;
-	touchnavigation[KEY_UPARROW].w = 20;
-	touchnavigation[KEY_UPARROW].h = 16;
-	touchnavigation[KEY_UPARROW].dpad = true;
-
-	// Down
-	touchnavigation[KEY_DOWNARROW].x = touchnav_dpad_x + 8;
-	touchnavigation[KEY_DOWNARROW].y = touchnav_dpad_y + 24;
-	touchnavigation[KEY_DOWNARROW].w = 20;
-	touchnavigation[KEY_DOWNARROW].h = 16;
-	touchnavigation[KEY_DOWNARROW].dpad = true;
-
-	// Left
-	touchnavigation[KEY_LEFTARROW].x = touchnav_dpad_x - 8;
-	touchnavigation[KEY_LEFTARROW].y = touchnav_dpad_y + 8;
-	touchnavigation[KEY_LEFTARROW].w = 16;
-	touchnavigation[KEY_LEFTARROW].h = 14;
-	touchnavigation[KEY_LEFTARROW].dpad = true;
-
-	// Right
-	touchnavigation[KEY_RIGHTARROW].x = touchnav_dpad_x + 24;
-	touchnavigation[KEY_RIGHTARROW].y = touchnav_dpad_y + 8;
-	touchnavigation[KEY_RIGHTARROW].w = 16;
-	touchnavigation[KEY_RIGHTARROW].h = 14;
-	touchnavigation[KEY_RIGHTARROW].dpad = true;
 
 	// Back
 	touchnavigation[KEY_ESCAPE].x = left;
@@ -1109,24 +1065,21 @@ static void G_DefineTouchNavigation(void)
 	// Confirm
 	touchnavigation[KEY_ENTER].w = 24;
 	touchnavigation[KEY_ENTER].h = 24;
-	if (touch_dpad_menu)
-	{
-		touchnavigation[KEY_ENTER].x = (touchnav_dpad_x + (touchnav_dpad_w / 2)) - (touchnavigation[KEY_ENTER].w/2);
-		touchnavigation[KEY_ENTER].y = (touchnav_dpad_y + touchnav_dpad_h + touchnavigation[KEY_ENTER].h);
-	}
-	else
-	{
-		touchnavigation[KEY_ENTER].x = ((vid.width / vid.dup) - touchnavigation[KEY_ENTER].w - left);
-		touchnavigation[KEY_ENTER].y = touchnavigation[KEY_ESCAPE].y;
-	}
+	touchnavigation[KEY_ENTER].x = ((vid.width / vid.dup) - touchnavigation[KEY_ENTER].w - left);
+	touchnavigation[KEY_ENTER].y = touchnavigation[KEY_ESCAPE].y;
 }
 
-void G_DefineTouchControls(void)
+void G_DefineTouchButtons(void)
 {
 	G_DefineTouchGameControls();
 	G_DefineTouchNavigation();
 }
 #endif
+
+boolean G_InGameInput(void)
+{
+	return (!(menuactive || CON_Ready() || chat_on));
+}
 
 INT32 G_GetControlScheme(INT32 (*fromcontrols)[2], const INT32 *gclist, INT32 gclen)
 {
