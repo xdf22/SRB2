@@ -43,6 +43,9 @@ typedef struct
 	INT32 x; // mouse/joystick x move
 	INT32 y; // mouse/joystick y move
 	UINT8 which;
+#ifdef TOUCHINPUTS
+	INT32 extradata[2]; // finger delta, screen size
+#endif
 	boolean repeated; // key repeat
 } event_t;
 
