@@ -803,12 +803,11 @@ void CON_Ticker(void)
 			I_UpdateMouseGrab();
 		}
 		else
-		{
 			CON_ChangeHeight();
+
 #if (defined(IOS) && defined(TOUCHINPUTS))
-			con_scrollup = 0;
+		con_scrollup = 0;
 #endif
-		}
 	}
 
 	// check if console ready for prompt

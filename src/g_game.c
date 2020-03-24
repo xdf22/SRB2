@@ -902,6 +902,18 @@ INT32 JoyAxis(joyaxis_e axissel)
 			return 0;
 	}
 
+#ifdef TOUCHINPUTS
+	if (FLOAT_TO_FIXED(touchjoyxmove) || FLOAT_TO_FIXED(touchjoyymove)) // Touch screen joystick
+	{
+		if (axissel == JA_MOVE)
+			return (INT32)(touchjoyymove * JOYAXISRANGE);
+		else if (axissel == JA_STRAFE)
+			return (INT32)(touchjoyxmove * JOYAXISRANGE);
+		else
+			return 0;
+	}
+#endif
+
 	if (axisval < 0) //odd -axises
 	{
 		axisval = -axisval;
@@ -1198,6 +1210,15 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		((chasecam && !player->spectator) ? chasefreelook : alwaysfreelook);
 	analogjoystickmove = usejoystick && !Joystick.bGamepadStyle;
 	gamepadjoystickmove = usejoystick && Joystick.bGamepadStyle;
+
+#ifdef TOUCHINPUTS
+	if (touch_movementstyle == tms_joystick)
+	{
+		usejoystick = 1;
+		analogjoystickmove = true;
+		gamepadjoystickmove = false;
+	}
+#endif
 
 	thisjoyaiming = (chasecam && !player->spectator) ? chasefreelook : alwaysfreelook;
 
@@ -1907,6 +1928,9 @@ void G_DoLoadLevel(boolean resetplayer)
 	{
 		joyxmove[i] = joyymove[i] = 0;
 		joy2xmove[i] = joy2ymove[i] = 0;
+#ifdef TOUCHINPUTS
+		touchjoyxmove = touchjoyymove = 0.0f;
+#endif
 	}
 	G_SetMouseDeltas(0, 0, 1);
 	G_SetMouseDeltas(0, 0, 2);
@@ -3219,6 +3243,9 @@ void G_DoReborn(INT32 playernum)
 			{
 				joyxmove[i] = joyymove[i] = 0;
 				joy2xmove[i] = joy2ymove[i] = 0;
+#ifdef TOUCHINPUTS
+				touchjoyxmove = touchjoyymove = 0.0f;
+#endif
 			}
 			G_SetMouseDeltas(0, 0, 1);
 			G_SetMouseDeltas(0, 0, 2);

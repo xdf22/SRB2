@@ -1424,6 +1424,41 @@ void ST_drawTouchDPad(
 #undef SCALEPAD
 }
 
+void ST_drawTouchJoystick(INT32 dpadx, INT32 dpady, INT32 dpadw, INT32 dpadh, INT32 flags, boolean cursor)
+{
+	fixed_t dupx = vid.dup*FRACUNIT;
+	fixed_t dupy = vid.dup*FRACUNIT;
+
+	INT32 x = FixedMul(dpadx * FRACUNIT, dupx) / FRACUNIT;
+	INT32 y = FixedMul(dpady * FRACUNIT, dupy) / FRACUNIT;
+	INT32 w = FixedMul(dpadw * FRACUNIT, dupx) / FRACUNIT;
+	INT32 h = FixedMul(dpadh * FRACUNIT, dupy) / FRACUNIT;
+
+	INT32 stickx = max(-TOUCHJOYEXTENDX, min(touchjoyxmove * TOUCHJOYEXTENDX, TOUCHJOYEXTENDX));
+	INT32 sticky = max(-TOUCHJOYEXTENDY, min(touchjoyymove * TOUCHJOYEXTENDY, TOUCHJOYEXTENDY));
+
+	V_DrawFill(x, y-1, w, h, flags|20);
+	V_DrawFill(x, y+h-1, w, vid.dup, flags|29);
+
+	if (cursor)
+	{
+		patch_t *cursor = W_CachePatchName("STJRBABY", PU_PATCH);
+		fixed_t size = FixedDiv(min(dpadw, dpadh)*FRACUNIT, SHORT(cursor->width)*FRACUNIT) / 2;
+		V_DrawFixedPatch(
+		((x*FRACUNIT + (w*FRACUNIT / 2)) - (((SHORT(cursor->width) * vid.dup) / 2) * size)) + (stickx * vid.dup * FRACUNIT),
+		((y*FRACUNIT + (h*FRACUNIT / 2)) - (((SHORT(cursor->height) * vid.dup) / 2) * size)) + (sticky * vid.dup * FRACUNIT),
+		size, V_NOSCALESTART, cursor, NULL);
+	}
+	else
+	{
+		INT32 size = (min(dpadw, dpadh) / 4);
+		V_DrawFill(
+		((x + (w / 2)) - ((size * vid.dup) / 2)) + stickx,
+		((y + (h / 2)) - ((size * vid.dup) / 2)) + sticky,
+		size * vid.dup, size * vid.dup, flags|40);
+	}
+}
+
 void ST_drawTouchGameInput(void)
 {
 	fixed_t dupx = vid.dup*FRACUNIT;
@@ -1445,14 +1480,20 @@ void ST_drawTouchGameInput(void)
 	if (promptblockcontrols)
 		return;
 
-	ST_drawTouchDPad(
-		touch_dpad_x, touch_dpad_y,
-		touch_dpad_w, touch_dpad_h,
-		tleft, (stplyr->cmd.sidemove < 0),
-		tright, (stplyr->cmd.sidemove > 0),
-		tup, (stplyr->cmd.forwardmove > 0),
-		tdown, (stplyr->cmd.forwardmove < 0),
-		true, flags, accent);
+	// Draw the d-pad
+	if (touch_movementstyle == tms_dpad)
+	{
+		ST_drawTouchDPad(
+			touch_dpad_x, touch_dpad_y,
+			touch_dpad_w, touch_dpad_h,
+			tleft, (stplyr->cmd.sidemove < 0),
+			tright, (stplyr->cmd.sidemove > 0),
+			tup, (stplyr->cmd.forwardmove > 0),
+			tdown, (stplyr->cmd.forwardmove < 0),
+			true, flags, accent);
+	}
+	else // Draw the joystick
+		ST_drawTouchJoystick(touch_dpad_x, touch_dpad_y, touch_dpad_w, touch_dpad_h, flags, false);
 
 #define DEFAULTKEYCOL 16 // Because of macro expansion, this define needs to be up here.
 #define drawbutton(gctype, butt, symb, strxoffs, stryoffs, keycol) { \
@@ -1472,7 +1513,7 @@ void ST_drawTouchGameInput(void)
 			V_DrawFill(x, y + h, w, shadow, 29|flags); \
 		} \
 		V_DrawFill(x, y + offs, w, h, col|flags); \
-		V_DrawString((x + (w / 2)) - ((V_StringWidth(symb, flags)) / 2) + strxoffs, \
+		V_DrawString((x + (w / 2)) - (V_StringWidth(symb, flags) / 2) + strxoffs, \
 					((y + (h / 2)) - ((8*vid.dup) / 2) + offs) + stryoffs, \
 					flags, symb); \
 		} \
@@ -1483,8 +1524,8 @@ void ST_drawTouchGameInput(void)
 #define drawoffsbutt(gctype, butt, symb, xoffs, yoffs) drawbutton(gctype, butt, symb, xoffs, yoffs, DEFAULTKEYCOL)
 
 	// Jump and spin
-	drawbutt(GC_JUMP,  BT_JUMP, "J");
-	drawbutt(GC_SPIN,   BT_SPIN,  "S");
+	drawbutt(GC_JUMP,  BT_JUMP, "JMP");
+	drawbutt(GC_SPIN,   BT_SPIN,  "SPN");
 
 	// Control panel
 	drawbutt(GC_SYSTEMMENU, 0, "\x018"); // <>
@@ -1492,8 +1533,11 @@ void ST_drawTouchGameInput(void)
 	// Pause
 	drawbutt(GC_PAUSE,      0, (paused ? "\x1D" : "II"));
 
-	// Switch viewpoint
+	// Spy mode
 	drawbutt(GC_VIEWPOINTNEXT, 0, "F12");
+
+	// Movie mode
+	drawcolbutt(GC_RECORDGIF, 0, "REC", (moviemode ? ((leveltime & 16) ? 36 : 43) : 36));
 
 	// Talk key and team talk key
 	drawoffsbutt(GC_TALKKEY, 0, "...", 1, -1);
