@@ -82,6 +82,8 @@ static void PointLimit_OnChange(void);
 static void TimeLimit_OnChange(void);
 static void NumLaps_OnChange(void);
 static void BaseNumLaps_OnChange(void);
+
+static void PausePermission_OnChange(void);
 static void Mute_OnChange(void);
 
 static void Hidetime_OnChange(void);
@@ -381,7 +383,7 @@ consvar_t cv_exitmove = CVAR_INIT ("exitmove", "On", CV_SAVE|CV_NETVAR|CV_CALL|C
 
 consvar_t cv_runscripts = CVAR_INIT ("runscripts", "Yes", CV_ALLOWLUA, CV_YesNo, NULL);
 
-consvar_t cv_pause = CVAR_INIT ("pausepermission", "Server", CV_SAVE|CV_NETVAR|CV_ALLOWLUA, pause_cons_t, NULL);
+consvar_t cv_pause = CVAR_INIT ("pausepermission", "Server", CV_SAVE|CV_NETVAR|CV_ALLOWLUA, pause_cons_t, PausePermission_OnChange);
 consvar_t cv_mute = CVAR_INIT ("mute", "Off", CV_NETVAR|CV_CALL|CV_ALLOWLUA, CV_OnOff, Mute_OnChange);
 
 consvar_t cv_sleep = CVAR_INIT ("cpusleep", "1", CV_SAVE, sleeping_cons_t, NULL);
@@ -849,7 +851,7 @@ void D_RegisterClientCommands(void)
 #endif
 	CV_RegisterVar(&cv_controlperkey);
 
-#if defined(__ANDROID__)
+#if defined(IOS)
 	// Disable the mouse
 	cv_usemouse.defaultvalue = "Off";
 #endif
@@ -2949,6 +2951,11 @@ static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 		displayplayer = consoleplayer;
 	}
 
+#ifdef TOUCHINPUTS
+	if (playernum == consoleplayer)
+		G_UpdateTouchControls();
+#endif
+
 	// In tag, check to see if you still have a game.
 	if (G_TagGametype())
 		P_CheckSurvivors();
@@ -3152,6 +3159,9 @@ static void Got_Verification(UINT8 **cp, INT32 playernum)
 		return;
 
 	CONS_Printf(M_GetText("You are now a server administrator.\n"));
+#ifdef TOUCHINPUTS
+	G_UpdateTouchControls();
+#endif
 }
 
 static void Command_RemoveAdmin_f(void)
@@ -3205,6 +3215,9 @@ static void Got_Removal(UINT8 **cp, INT32 playernum)
 		return;
 
 	CONS_Printf(M_GetText("You are no longer a server administrator.\n"));
+#ifdef TOUCHINPUTS
+	G_UpdateTouchControls();
+#endif
 }
 
 static void Command_MotD_f(void)
@@ -3342,12 +3355,12 @@ static void Got_RunSOCcmd(UINT8 **cp, INT32 playernum)
 			if (ncs == FS_NOTFOUND)
 			{
 				CONS_Printf(M_GetText("The server tried to add %s,\nbut you don't have this file.\nYou need to find it in order\nto play on this server.\n"), filename);
-				M_StartMessage(va("The server added a file\n(%s)\nthat you do not have.\n\nPress ESC\n",filename), NULL, MM_NOTHING);
+				M_StartMessage(va("The server added a file\n(%s)\nthat you do not have.\n\n" PRESS_ESC_MESSAGE,filename), NULL, MM_NOTHING);
 			}
 			else
 			{
 				CONS_Printf(M_GetText("Unknown error finding soc file (%s) the server added.\n"), filename);
-				M_StartMessage(va("Unknown error trying to load a file\nthat the server added\n(%s).\n\nPress ESC\n",filename), NULL, MM_NOTHING);
+				M_StartMessage(va("Unknown error trying to load a file\nthat the server added\n(%s).\n\n" PRESS_ESC_MESSAGE,filename), NULL, MM_NOTHING);
 			}
 			return;
 		}
@@ -3816,22 +3829,22 @@ static void Got_Addfilecmd(UINT8 **cp, INT32 playernum)
 		if (ncs == FS_FOUND)
 		{
 			CONS_Printf(M_GetText("The server tried to add %s,\nbut you have too many files added.\nRestart the game to clear loaded files\nand play on this server."), filename);
-			M_StartMessage(va("The server added a file \n(%s)\nbut you have too many files added.\nRestart the game to clear loaded files.\n\nPress ESC\n",filename), NULL, MM_NOTHING);
+			M_StartMessage(va("The server added a file \n(%s)\nbut you have too many files added.\nRestart the game to clear loaded files.\n\n" PRESS_ESC_MESSAGE,filename), NULL, MM_NOTHING);
 		}
 		else if (ncs == FS_NOTFOUND)
 		{
 			CONS_Printf(M_GetText("The server tried to add %s,\nbut you don't have this file.\nYou need to find it in order\nto play on this server."), filename);
-			M_StartMessage(va("The server added a file \n(%s)\nthat you do not have.\n\nPress ESC\n",filename), NULL, MM_NOTHING);
+			M_StartMessage(va("The server added a file \n(%s)\nthat you do not have.\n\n" PRESS_ESC_MESSAGE,filename), NULL, MM_NOTHING);
 		}
 		else if (ncs == FS_MD5SUMBAD)
 		{
 			CONS_Printf(M_GetText("Checksum mismatch while loading %s.\nMake sure you have the copy of\nthis file that the server has.\n"), filename);
-			M_StartMessage(va("Checksum mismatch while loading \n%s.\nThe server seems to have a\ndifferent version of this file.\n\nPress ESC\n",filename), NULL, MM_NOTHING);
+			M_StartMessage(va("Checksum mismatch while loading \n%s.\nThe server seems to have a\ndifferent version of this file.\n\n" PRESS_ESC_MESSAGE,filename), NULL, MM_NOTHING);
 		}
 		else
 		{
 			CONS_Printf(M_GetText("Unknown error finding wad file (%s) the server added.\n"), filename);
-			M_StartMessage(va("Unknown error trying to load a file\nthat the server added \n(%s).\n\nPress ESC\n",filename), NULL, MM_NOTHING);
+			M_StartMessage(va("Unknown error trying to load a file\nthat the server added \n(%s).\n\n" PRESS_ESC_MESSAGE,filename), NULL, MM_NOTHING);
 		}
 		return;
 	}
@@ -5059,9 +5072,25 @@ static void Color2_OnChange(void)
 	lastgoodcolor2 = cv_playercolor2.value;
 }
 
+/** Updates touch control layouts after pause permission change.
+  *
+  * \sa cv_pause
+  * \author Lactozilla
+  */
+static void PausePermission_OnChange(void)
+{
+	if (server || (IsPlayerAdmin(consoleplayer)))
+		return;
+
+#ifdef TOUCHINPUTS
+	G_UpdateTouchControls();
+#endif
+}
+
 /** Displays the result of the chat being muted or unmuted.
   * The server or remote admin should already know and be able to talk
   * regardless, so this is only displayed to clients.
+  * Updates touch control layouts.
   *
   * \sa cv_mute
   * \author Graue <graue@oceanbase.org>
@@ -5075,6 +5104,10 @@ static void Mute_OnChange(void)
 		CONS_Printf(M_GetText("Chat has been muted.\n"));
 	else
 		CONS_Printf(M_GetText("Chat is no longer muted.\n"));
+
+#ifdef TOUCHINPUTS
+	G_UpdateTouchControls();
+#endif
 }
 
 /** Hack to clear all changed flags after game start.

@@ -620,6 +620,10 @@ UINT32 quickncasehash (const char *p, size_t n)
 	return x;
 }
 
+#ifdef TOUCHINPUTS
+void I_GetFinger(INT32 *x, INT32 *y);
+#endif
+
 #ifndef min // Double-Check with WATTCP-32's cdefs.h
 #define min(x, y) (((x) < (y)) ? (x) : (y))
 #endif

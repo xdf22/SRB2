@@ -8109,6 +8109,10 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		localaiming2 = 0;
 	}
 
+#ifdef TOUCHINPUTS
+	G_UpdateTouchControls();
+#endif
+
 	// clear special respawning que
 	iquehead = iquetail = 0;
 

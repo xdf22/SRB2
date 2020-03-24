@@ -1031,6 +1031,23 @@ INT32 I_GetKey (void)
 	return rc;
 }
 
+#ifdef TOUCHINPUTS
+void I_GetFinger(INT32 *x, INT32 *y)
+{
+	event_t *ev;
+	for (; eventtail != eventhead; eventtail = (eventtail+1)&(MAXEVENTS-1))
+	{
+		ev = &events[eventtail];
+		if (ev->type == ev_touchdown || ev->type == ev_touchmotion)
+		{
+			*x = ev->x;
+			*y = ev->y;
+			continue;
+		}
+	}
+}
+#endif
+
 //
 // I_JoyScale
 //

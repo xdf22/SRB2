@@ -2185,32 +2185,8 @@ boolean G_Responder(event_t *ev)
 				|| ev->key == gamecontrol[GC_PAUSE][1]
 				|| ev->key == KEY_PAUSE)
 			{
-				if (modeattacking && !demoplayback && (gamestate == GS_LEVEL))
-				{
-					pausebreakkey = (ev->key == KEY_PAUSE);
-					if (menuactive || pausedelay < 0 || leveltime < 2)
-						return true;
-
-					if (!cv_instantretry.value && pausedelay < 1+(NEWTICRATE/2))
-						pausedelay = 1+(NEWTICRATE/2);
-					else if (cv_instantretry.value || ++pausedelay > 1+(NEWTICRATE/2)+(NEWTICRATE/3))
-					{
-						G_SetModeAttackRetryFlag();
-						return true;
-					}
-					pausedelay++; // counteract subsequent subtraction this frame
-				}
-				else
-				{
-					INT32 oldpausedelay = pausedelay;
-					pausedelay = (NEWTICRATE/7);
-					if (!oldpausedelay)
-					{
-						// command will handle all the checks for us
-						COM_ImmedExecute("pause");
-						return true;
-					}
-				}
+				if (G_HandlePauseKey(ev->key == KEY_PAUSE))
+					return true;
 			}
 			if (ev->key == gamecontrol[GC_CAMTOGGLE][0]
 				|| ev->key == gamecontrol[GC_CAMTOGGLE][1])
@@ -3090,6 +3066,11 @@ void G_DoReborn(INT32 playernum)
 
 	// Make sure objectplace is OFF when you first start the level!
 	OP_ResetObjectplace();
+
+#ifdef TOUCHINPUTS
+	if (playernum == consoleplayer)
+		G_UpdateTouchControls();
+#endif
 
 	// Tailsbot
 	if (player->bot == BOT_2PAI || player->bot == BOT_2PHUMAN)
@@ -4774,12 +4755,12 @@ void G_LoadGame(UINT32 slot, INT16 mapoverride)
 	if (strcmp((const char *)&savebuffer.buf[savebuffer.pos], (const char *)vcheck))
 	{
 #ifdef SAVEGAME_OTHERVERSIONS
-		M_StartMessage(M_GetText("Save game from different version.\nYou can load this savegame, but\nsaving afterwards will be disabled.\n\nDo you want to continue anyway?\n\n(Press 'Y' to confirm)\n"),
+		M_StartMessage(M_GetText("Save game from different version.\nYou can load this savegame, but\nsaving afterwards will be disabled.\n\nDo you want to continue anyway?\n\n("PRESS_Y_MESSAGE" to confirm)\n"),
 		               M_ForceLoadGameResponse, MM_YESNO);
 		//Freeing done by the callback function of the above message
 #else
 		M_ClearMenus(true); // so ESC backs out to title
-		M_StartMessage(M_GetText("Save game from different version\n\nPress ESC\n"), NULL, MM_NOTHING);
+		M_StartMessage(M_GetText("Save game from different version\n\n" PRESS_ESC_MESSAGE), NULL, MM_NOTHING);
 		Command_ExitGame_f();
 		Z_Free(savebuffer.buf);
 
@@ -4800,7 +4781,7 @@ void G_LoadGame(UINT32 slot, INT16 mapoverride)
 	if (!P_LoadGame(&savebuffer, mapoverride))
 	{
 		M_ClearMenus(true); // so ESC backs out to title
-		M_StartMessage(M_GetText("Savegame file corrupted\n\nPress ESC\n"), NULL, MM_NOTHING);
+		M_StartMessage(M_GetText("Savegame file corrupted\n\n" PRESS_ESC_MESSAGE), NULL, MM_NOTHING);
 		Command_ExitGame_f();
 		Z_Free(savebuffer.buf);
 
@@ -5457,6 +5438,9 @@ INT32 G_FindMapByNameOrCode(const char *mapname, char **realmapnamep)
 void G_SetGamestate(gamestate_t newstate)
 {
 	gamestate = newstate;
+#ifdef TOUCHINPUTS
+	G_UpdateTouchControls();
+#endif
 }
 
 /* These functions handle the exitgame flag. Before, when the user
