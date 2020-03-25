@@ -3275,7 +3275,7 @@ boolean M_Responder(event_t *ev)
 				}
 			}
 		}
-		else if (ev->type == ev_joystick  && ev->key == 0 && joywait < I_GetTime())
+		else if (ev->type == ev_joystick && ev->key == 0 && joywait < I_GetTime())
 		{
 			const INT32 jdeadzone = (JOYAXISRANGE * cv_digitaldeadzone.value) / FRACUNIT;
 			if (ev->y != INT32_MAX)
@@ -3353,7 +3353,7 @@ boolean M_Responder(event_t *ev)
 		{
 			INT32 x = ev->x;
 			INT32 y = ev->y;
-			INT32 finger = ev->which;
+			touchfinger_t *finger = &touchfingers[ev->key];
 			boolean button = false;
 
 			// Check for any buttons first
@@ -3388,7 +3388,7 @@ boolean M_Responder(event_t *ev)
 			{
 				// Tap anywhere to end the message
 				if (routine == M_StopMessage)
-					touchfingers[finger].u.keyinput = KEY_ENTER;
+					finger->u.keyinput = KEY_ENTER;
 				else // Handle screen regions
 				{
 					// 1/4 of the screen
@@ -3398,32 +3398,32 @@ boolean M_Responder(event_t *ev)
 					if (x < sides || x >= (vid.width - sides))
 					{
 						if (x >= (vid.width / 2))
-							touchfingers[finger].u.keyinput = KEY_RIGHTARROW;
+							finger->u.keyinput = KEY_RIGHTARROW;
 						else
-							touchfingers[finger].u.keyinput = KEY_LEFTARROW;
+							finger->u.keyinput = KEY_LEFTARROW;
 					}
 					else
 					{
 						// Handle vertical input
 						if (y >= (vid.height / 2))
-							touchfingers[finger].u.keyinput = KEY_DOWNARROW;
+							finger->u.keyinput = KEY_DOWNARROW;
 						else
-							touchfingers[finger].u.keyinput = KEY_UPARROW;
+							finger->u.keyinput = KEY_UPARROW;
 					}
 				}
 
 				// finger down
-				touchfingers[finger].type.menu = true;
-				touchfingers[finger].x = x;
-				touchfingers[finger].y = y;
+				finger->type.menu = true;
+				finger->x = x;
+				finger->y = y;
 			}
 		}
 		else if (ev->type == ev_touchup)
 		{
-			INT32 finger = ev->which;
-			if (touchfingers[finger].type.menu)
-				ch = touchfingers[finger].u.keyinput;
-			touchfingers[finger].type.menu = false;
+			touchfinger_t *finger = &touchfingers[ev->key];
+			if (finger->type.menu)
+				ch = finger->u.keyinput;
+			finger->type.menu = false;
 		}
 #endif
 		else if (ev->type == ev_keyup) // Preserve event for other responders

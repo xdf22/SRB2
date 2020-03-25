@@ -190,7 +190,7 @@ void G_MapEventsToControls(event_t *ev)
 #ifdef TOUCHINPUTS
 	INT32 x = ev->x;
 	INT32 y = ev->y;
-	touchfinger_t *finger = &touchfingers[ev->which]; // ev->data3 is the finger's ID.
+	touchfinger_t *finger = &touchfingers[ev->key];
 	INT32 gc;
 	boolean foundbutton = false;
 #endif
@@ -199,10 +199,7 @@ void G_MapEventsToControls(event_t *ev)
 	{
 		case ev_keydown:
 			if (ev->key < NUMINPUTS)
-			{
-				if (!ignoregameinputs)
-					gamekeydown[ev->key] = 1;
-			}
+				gamekeydown[ev->key] = 1;
 #ifdef PARANOIA
 			else
 			{
@@ -327,6 +324,7 @@ void G_MapEventsToControls(event_t *ev)
 
 					finger->x = x;
 					finger->y = y;
+					finger->pressure = ev->pressure;
 					finger->u.gamecontrol = i;
 					break;
 				}
@@ -347,6 +345,7 @@ void G_MapEventsToControls(event_t *ev)
 					{
 						finger->x = x;
 						finger->y = y;
+						finger->pressure = ev->pressure;
 						finger->type.joystick = FINGERMOTION_JOYSTICK;
 						finger->u.gamecontrol = -1;
 						foundbutton = true;
@@ -358,8 +357,8 @@ void G_MapEventsToControls(event_t *ev)
 			// The finger is moving either the joystick or the camera.
 			if (!foundbutton)
 			{
-				INT32 dx = ev->extradata[0];
-				INT32 dy = ev->extradata[1];
+				INT32 dx = ev->dx;
+				INT32 dy = ev->dy;
 
 				if (ev->type == ev_touchmotion && finger->type.joystick) // Remember that this is an union!
 				{
@@ -386,11 +385,13 @@ void G_MapEventsToControls(event_t *ev)
 
 					finger->x = x;
 					finger->y = y;
+					finger->pressure = ev->pressure;
 				}
 				else
 				{
 					finger->x = x;
 					finger->y = y;
+					finger->pressure = ev->pressure;
 					finger->type.mouse = FINGERMOTION_MOUSE;
 					finger->u.gamecontrol = GC_NULL;
 				}
@@ -398,14 +399,18 @@ void G_MapEventsToControls(event_t *ev)
 			break;
 
 		case ev_touchup:
-			// Let go of this button.
+			// Let go of this finger.
 			gc = finger->u.gamecontrol;
 			if (gc > GC_NULL)
 				gamekeydown[gamecontrol[gc][0]] = GC_NULL;
 			finger->u.gamecontrol = GC_NULL;
+
+			// Reset joystick movement.
 			if (finger->type.joystick == FINGERMOTION_JOYSTICK)
 				touchjoyxmove = touchjoyymove = 0.0f;
-			finger->type.mouse = 0; // Remember that this is an union!
+
+			// Remember that this is an union!
+			finger->type.mouse = 0;
 			break;
 #endif
 
@@ -436,8 +441,8 @@ void G_MapEventsToControls(event_t *ev)
 		case ev_mouse2: // buttons are virtual keys
 			if (!G_InGameInput())
 				break;
-			mouse2.rdx = ev->x;
-			mouse2.rdy = ev->y;
+			mouse2.rdx = (INT32)(ev->x*((cv_mousesens2.value*cv_mousesens2.value)/110.0f + 0.1f));
+			mouse2.rdy = (INT32)(ev->y*((cv_mousesens2.value*cv_mousesens2.value)/110.0f + 0.1f));
 			break;
 
 		default:

@@ -979,24 +979,14 @@ static void Impl_HandleJoystickButtonEvent(SDL_JoyButtonEvent evt, Uint32 type)
 static void Impl_HandleTouchEvent(SDL_TouchFingerEvent evt)
 {
 	event_t event;
-	INT32 finger;
+	INT32 finger = (INT32)evt.fingerId;
 
-	float touchx = evt.x;
-	float touchy = evt.y;
+	INT32 screenx = evt.x * vid.width;
+	INT32 screeny = evt.y * vid.height;
 
-	INT32 screenx = -1;
-	INT32 screeny = -1;
-	INT32 deltax, deltay;
+	INT32 deltax = evt.dx * vid.width;
+	INT32 deltay = -evt.dy * vid.height;
 
-	if (touchx >= 0.0 && touchx <= 1.0)
-		screenx = touchx * vid.width;
-	if (touchy >= 0.0 && touchy <= 1.0)
-		screeny = touchy * vid.height;
-
-	deltax = evt.dx * vid.width;
-	deltay = -evt.dy * vid.height;
-
-	finger = (INT32)evt.fingerId;
 	if (finger >= NUMTOUCHFINGERS)
 	{
 		CONS_Alert(CONS_NOTICE, "More than %d fingers not supported, please only use up to two hands or paws\n", NUMTOUCHFINGERS);
@@ -1051,14 +1041,15 @@ static void Impl_HandleTouchEvent(SDL_TouchFingerEvent evt)
 
 		event.x = screenx;
 		event.y = screeny;
-		event.which = finger;
+		event.key = finger;
+		event.pressure = evt.pressure;
 
-		// calculate correct delta
+		// calculate finger delta
 		{
 			int wwidth, wheight;
 			SDL_GetWindowSize(window, &wwidth, &wheight);
-			event.extradata[0] = (INT32)lround(deltax * ((float)wwidth / (float)realwidth));
-			event.extradata[1] = (INT32)lround(deltay * ((float)wheight / (float)realheight));
+			event.dx = (INT32)lround(deltax * ((float)wwidth / (float)realwidth));
+			event.dy = (INT32)lround(deltay * ((float)wheight / (float)realheight));
 		}
 	}
 	D_PostEvent(&event);
