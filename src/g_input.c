@@ -1270,12 +1270,14 @@ static void G_DefineTouchGameControls(void)
 		touchcontrols[GC_STRAFERIGHT].h = 14;
 
 		// Jump
+		touchcontrols[GC_JUMP].name = "JMP";
 		touchcontrols[GC_JUMP].w = 40;
 		touchcontrols[GC_JUMP].h = 32;
 		touchcontrols[GC_JUMP].x = ((vid.width / vid.dup) - touchcontrols[GC_JUMP].w - corneroffset - 12);
 		touchcontrols[GC_JUMP].y = ((vid.height / vid.dup) - touchcontrols[GC_JUMP].h - corneroffset - 12) + offs;
 
 		// Spin
+		touchcontrols[GC_SPIN].name = "SPN";
 		touchcontrols[GC_SPIN].w = 32;
 		touchcontrols[GC_SPIN].h = 24;
 		touchcontrols[GC_SPIN].x = (touchcontrols[GC_JUMP].x - touchcontrols[GC_SPIN].w - 12);
@@ -1323,13 +1325,15 @@ static void G_DefineTouchGameControls(void)
 		touchcontrols[GC_STRAFERIGHT].h = 28;
 
 		// Jump
+		touchcontrols[GC_JUMP].name = "JUMP";
 		touchcontrols[GC_JUMP].w = 48;
 		touchcontrols[GC_JUMP].h = 48;
 		touchcontrols[GC_JUMP].x = ((vid.width / vid.dup) - touchcontrols[GC_JUMP].w - corneroffset - 12);
 		touchcontrols[GC_JUMP].y = ((vid.height / vid.dup) - touchcontrols[GC_JUMP].h - corneroffset - 12) + offs;
 
 		// Spin
-		touchcontrols[GC_SPIN].w = 32;
+		touchcontrols[GC_SPIN].name = "SPIN";
+		touchcontrols[GC_SPIN].w = 40;
 		touchcontrols[GC_SPIN].h = 32;
 		touchcontrols[GC_SPIN].x = (touchcontrols[GC_JUMP].x - touchcontrols[GC_SPIN].w - 12);
 		touchcontrols[GC_SPIN].y = touchcontrols[GC_JUMP].y + 12;
