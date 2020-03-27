@@ -1459,7 +1459,7 @@ void ST_drawTouchJoystick(INT32 dpadx, INT32 dpady, INT32 dpadw, INT32 dpadh, IN
 	}
 }
 
-void ST_drawTouchGameInput(void)
+void ST_drawTouchGameInput(boolean drawgamecontrols)
 {
 	fixed_t dupx = vid.dup*FRACUNIT;
 	fixed_t dupy = vid.dup*FRACUNIT;
@@ -1477,9 +1477,10 @@ void ST_drawTouchGameInput(void)
 	if (!G_InGameInput())
 		return;
 
-	// Draw the d-pad
-	if (!promptblockcontrols)
+	// Draw movement control
+	if (!promptblockcontrols && drawgamecontrols)
 	{
+		// Draw the d-pad
 		if (touch_movementstyle == tms_dpad)
 		{
 			ST_drawTouchDPad(
@@ -1524,8 +1525,11 @@ void ST_drawTouchGameInput(void)
 #define drawoffsbutt(gctype, butt, symb, xoffs, yoffs) drawbutton(gctype, butt, symb, xoffs, yoffs, DEFAULTKEYCOL)
 
 	// Jump and spin
-	drawbutt(GC_JUMP,  BT_JUMP, "JMP");
-	drawbutt(GC_SPIN,   BT_SPIN,  "SPN");
+	if (drawgamecontrols)
+	{
+		drawbutt(GC_JUMP,  BT_JUMP, "JMP");
+		drawbutt(GC_SPIN,   BT_SPIN,  "SPN");
+	}
 
 	// Control panel
 	drawbutt(GC_SYSTEMMENU, 0, "\x018"); // <>
@@ -3037,6 +3041,10 @@ static boolean drawstagetitle = false;
 //
 static void ST_overlayDrawer(void)
 {
+#ifdef TOUCHINPUTS
+	boolean drawtouchcontrols = true;
+#endif
+
 	// hu_showscores = auto hide score/time/rings when tab rankings are shown
 	if (!(hu_showscores && (netgame || multiplayer)))
 	{
@@ -3091,6 +3099,10 @@ static void ST_overlayDrawer(void)
 
 			V_DrawScaledPatch(lvlttlx - 8, BASEVIDHEIGHT/2, flags, (countdown == 1 ? slidtime : slidgame));
 			V_DrawScaledPatch(BASEVIDWIDTH + 8 - lvlttlx, BASEVIDHEIGHT/2, flags, slidover);
+
+#ifdef TOUCHINPUTS
+			drawtouchcontrols = false;
+#endif
 		}
 	}
 
@@ -3185,8 +3197,8 @@ static void ST_overlayDrawer(void)
 	if ((cv_showinput.value && !players[displayplayer].spectator) || (modeattacking && !(demoplayback && hu_showscores)))
 		ST_drawInput();
 #ifdef TOUCHINPUTS
-	else if (stplyr == &players[consoleplayer] && (!demoplayback))
-		ST_drawTouchGameInput();
+	else if (stplyr == &players[consoleplayer] && !demoplayback)
+		ST_drawTouchGameInput(drawtouchcontrols);
 #endif
 
 	ST_drawDebugInfo();
