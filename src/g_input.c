@@ -234,6 +234,10 @@ void G_MapEventsToControls(event_t *ev)
 				break;
 			}
 
+			// Finger ignores touch motion events.
+			if (ev->type == ev_touchmotion && finger->ignoremotion)
+				break;
+
 			// Lactozilla: Find every on-screen button and
 			// check if they are below your finger.
 			for (i = 0; i < NUM_GAMECONTROLS; i++)
@@ -358,6 +362,28 @@ void G_MapEventsToControls(event_t *ev)
 				}
 			}
 
+			// In some gamestates, set a specific gamecontrol down or something.
+			if (!foundbutton)
+			{
+				gc = GC_NULL;
+
+				if (gamestate == GS_INTERMISSION || gamestate == GS_CUTSCENE)
+					gc = GC_SPIN;
+				else if (promptblockcontrols && F_GetPromptHideHud(y / vid.dup))
+					gc = GC_JUMP;
+
+				if (gc != GC_NULL)
+				{
+					finger->x = x;
+					finger->y = y;
+					finger->pressure = ev->pressure;
+					finger->ignoremotion = true;
+					finger->u.gamecontrol = gc;
+					gamekeydown[gamecontrol[gc][0]] = 1;
+					foundbutton = true;
+				}
+			}
+
 			// The finger is moving either the joystick or the camera.
 			if (!foundbutton)
 			{
@@ -399,7 +425,9 @@ void G_MapEventsToControls(event_t *ev)
 					finger->type.mouse = FINGERMOTION_MOUSE;
 					finger->u.gamecontrol = GC_NULL;
 				}
+				foundbutton = true;
 			}
+
 			break;
 
 		case ev_touchup:
@@ -408,6 +436,7 @@ void G_MapEventsToControls(event_t *ev)
 			if (gc > GC_NULL)
 				gamekeydown[gamecontrol[gc][0]] = GC_NULL;
 			finger->u.gamecontrol = GC_NULL;
+			finger->ignoremotion = false;
 
 			// Reset joystick movement.
 			if (finger->type.joystick == FINGERMOTION_JOYSTICK)
@@ -1186,7 +1215,7 @@ void G_UpdateTouchControls(void)
 static void G_DefineTouchGameControls(void)
 {
 	INT32 corneroffset = 4;
-	INT32 offs = (promptactive ? -16 : 0) * vid.dup;
+	INT32 offs = (promptactive ? -32 : 0);
 	INT32 bottomalign = 0;
 
 	if (vid.height != BASEVIDHEIGHT * vid.dup)
@@ -1357,10 +1386,22 @@ static void G_DefineTouchGameControls(void)
 		}
 	}
 
+	// Mark movement controls as d-pad buttons
 	touchcontrols[GC_FORWARD].dpad = true;
 	touchcontrols[GC_BACKWARD].dpad = true;
 	touchcontrols[GC_STRAFELEFT].dpad = true;
 	touchcontrols[GC_STRAFERIGHT].dpad = true;
+
+	// Hide movement controls in prompts that block controls
+	if (promptblockcontrols)
+	{
+		INT32 i;
+		for (i = 0; i < NUM_GAMECONTROLS; i++)
+		{
+			if (G_TouchButtonIsPlayerControl(i))
+				touchcontrols[i].hidden = true;
+		}
+	}
 }
 
 static void G_DefineTouchNavigation(void)

@@ -168,6 +168,7 @@ typedef struct
 		INT32 mouse;
 		INT32 joystick;
 	} type;
+	boolean ignoremotion;
 } touchfinger_t;
 extern touchfinger_t touchfingers[NUMTOUCHFINGERS];
 
