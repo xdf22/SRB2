@@ -65,15 +65,19 @@ INT32 touch_dpad_x, touch_dpad_y, touch_dpad_w, touch_dpad_h;
 
 // Touch screen settings
 touchmovementstyle_e touch_movementstyle;
-boolean touch_dpad_tiny;
+boolean touch_tinycontrols;
 boolean touch_camera;
 
 // Console variables for the touch screen
-static CV_PossibleValue_t dpadstyle_cons_t[] = {{tms_dpad, "D-Pad"}, {tms_joystick, "Joystick"}, {0, NULL}};
+static CV_PossibleValue_t touchstyle_cons_t[] = {{tms_dpad, "D-Pad"}, {tms_joystick, "Joystick"}, {0, NULL}};
 
-consvar_t cv_dpadstyle = {"touch_movementstyle", "Joystick", CV_SAVE|CV_CALL|CV_NOINIT, dpadstyle_cons_t, G_UpdateTouchControls, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_dpadtiny = {"touch_dpad_tiny", "Off", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, G_UpdateTouchControls, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_touchstyle = {"touch_movementstyle", "Joystick", CV_SAVE|CV_CALL|CV_NOINIT, touchstyle_cons_t, G_UpdateTouchControls, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_touchtiny = {"touch_tinycontrols", "Off", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, G_UpdateTouchControls, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_touchcamera = {"touch_camera", "On", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, G_UpdateTouchControls, 0, NULL, NULL, 0, 0, NULL};
+
+static CV_PossibleValue_t touchtrans_cons_t[] = {{0, "MIN"}, {10, "MAX"}, {0, NULL}};
+consvar_t cv_touchtrans = {"touch_transinput", "10", CV_SAVE, touchtrans_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_touchmenutrans = {"touch_transmenu", "10", CV_SAVE, touchtrans_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 // Touch screen sensitivity
 #define MAXTOUCHSENSITIVITY 100 // sensitivity steps
@@ -1198,9 +1202,13 @@ void G_DefineDefaultControls(void)
 	}
 
 #ifdef TOUCHINPUTS
-	CV_RegisterVar(&cv_dpadstyle);
-	CV_RegisterVar(&cv_dpadtiny);
+	CV_RegisterVar(&cv_touchmenutrans);
+	CV_RegisterVar(&cv_touchtrans);
+
 	CV_RegisterVar(&cv_touchcamera);
+	CV_RegisterVar(&cv_touchtiny);
+	CV_RegisterVar(&cv_touchstyle);
+
 	G_UpdateTouchControls();
 #endif
 }
@@ -1209,9 +1217,9 @@ void G_DefineDefaultControls(void)
 #ifdef TOUCHINPUTS
 void G_SetupTouchSettings(void)
 {
-	touch_movementstyle = cv_dpadstyle.value;
-	touch_dpad_tiny = !!cv_dpadtiny.value;
+	touch_movementstyle = cv_touchstyle.value;
 	touch_camera = (cv_usemouse.value ? false : (!!cv_touchcamera.value));
+	touch_tinycontrols = !!cv_touchtiny.value;
 }
 
 void G_UpdateTouchControls(void)
@@ -1232,7 +1240,7 @@ static void G_DefineTouchGameControls(void)
 	// clear all
 	memset(touchcontrols, 0x00, sizeof(touchconfig_t) * NUM_GAMECONTROLS);
 
-	if (touch_dpad_tiny)
+	if (touch_tinycontrols)
 	{
 		touch_dpad_x = 24;
 		touch_dpad_y = 128 + (offs + bottomalign);
@@ -1349,13 +1357,12 @@ static void G_DefineTouchGameControls(void)
 
 	// Pause
 	touchcontrols[GC_PAUSE].x = touchcontrols[GC_SYSTEMMENU].x;
+	touchcontrols[GC_PAUSE].y = touchcontrols[GC_SYSTEMMENU].y;
 	touchcontrols[GC_PAUSE].w = 24;
 	touchcontrols[GC_PAUSE].h = 24;
-	if (cv_pause.value || server || (IsPlayerAdmin(consoleplayer)))
-	{
+	if ((netgame && (cv_pause.value || server || IsPlayerAdmin(consoleplayer)))
+	|| (modeattacking && demorecording & marathonmode))
 		touchcontrols[GC_PAUSE].x -= (touchcontrols[GC_PAUSE].w + 4);
-		touchcontrols[GC_PAUSE].y = touchcontrols[GC_SYSTEMMENU].y;
-	}
 	else
 		touchcontrols[GC_PAUSE].hidden = true;
 

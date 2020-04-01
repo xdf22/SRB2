@@ -1266,7 +1266,7 @@ static void ST_drawInput(void)
 	w = FixedMul(touch->w * FRACUNIT, dupx) / FRACUNIT; \
 	h = FixedMul(touch->h * FRACUNIT, dupy) / FRACUNIT;
 
-void ST_drawJoystickBacking(INT32 padx, INT32 pady, INT32 padw, INT32 padh, fixed_t scale, UINT8 color)
+void ST_drawJoystickBacking(INT32 padx, INT32 pady, INT32 padw, INT32 padh, fixed_t scale, UINT8 color, INT32 flags)
 {
 	INT32 x, y, w, h;
 	fixed_t dupx = vid.dup*FRACUNIT;
@@ -1300,7 +1300,7 @@ void ST_drawJoystickBacking(INT32 padx, INT32 pady, INT32 padw, INT32 padh, fixe
 	V_DrawStretchyFixedPatch(
 		((x*FRACUNIT + (w*FRACUNIT / 2)) - (((SHORT(backing->width) * vid.dup) / 2) * xscale)),
 		((y*FRACUNIT + (h*FRACUNIT / 2)) - (((SHORT(backing->height) * vid.dup) / 2) * yscale)),
-		xscale, yscale, V_NOSCALESTART, backing, colormap);
+		xscale, yscale, flags, backing, colormap);
 }
 
 void ST_drawTouchDPad(
@@ -1315,6 +1315,7 @@ void ST_drawTouchDPad(
 	fixed_t dupx = vid.dup*FRACUNIT;
 	fixed_t dupy = vid.dup*FRACUNIT;
 	const INT32 shadow = vid.dup;
+	const UINT32 alphalevel = (10 - ((flags & V_ALPHAMASK) >> V_ALPHASHIFT));
 	INT32 col, offs;
 	INT32 base, ybase;
 	INT32 xslant, yslant;
@@ -1328,7 +1329,13 @@ void ST_drawTouchDPad(
 
 	// O backing
 	if (backing)
-		ST_drawJoystickBacking(dpadx, dpady, dpadw, dpadh, 3*FRACUNIT/2, 20);
+		ST_drawJoystickBacking(dpadx, dpady, dpadw, dpadh, 3*FRACUNIT/2, 20, flags);
+
+#define drawfill(dx, dy, dw, dh, dcol, dflags) \
+	if (alphalevel < 10) \
+		V_DrawFadeFill(dx, dy, dw, dh, dflags, dcol, alphalevel); \
+	else \
+		V_DrawFill(dx, dy, dw, dh, dcol|dflags);
 
 	if (vid.dup == 1)
 		udw = 2;
@@ -1341,10 +1348,10 @@ void ST_drawTouchDPad(
 	base = (w - xslant);
 	ybase = (y + h) - vid.dup;
 
-#define drawleftbutton(color, offset) \
-	V_DrawFill(x, y+offset, base+(vid.dup), h, color|flags); \
+#define drawleftbutton(color, offset) { \
+	drawfill(x, y+offset, base+(vid.dup), h, color, flags); \
 	for (i = 0; i < xslant; i++) \
-		V_DrawFill(x+base+i+(vid.dup), (y+i)+offset, vid.dup, h-(i*2), color|flags);
+		drawfill(x+base+i+(vid.dup), (y+i)+offset, vid.dup, h-(i*2), color, flags); }
 
 	if (moveleft)
 	{
@@ -1355,7 +1362,8 @@ void ST_drawTouchDPad(
 	{
 		col = 16;
 		offs = 0;
-		drawleftbutton(29, shadow);
+		if (alphalevel >= 10)
+			drawleftbutton(29, shadow);
 	}
 
 	drawleftbutton(col, offs);
@@ -1369,13 +1377,13 @@ void ST_drawTouchDPad(
 	base = w;
 	ybase = (y + h) - vid.dup;
 
-#define drawupbutton(color, offset) \
+#define drawupbutton(color, offset) { \
 	for (i = 0; i < yslant; i++) \
-		V_DrawFill(x+i, y+offset, 1, (h-yslant)+i, color|flags); \
+		drawfill(x+i, y+offset, 1, (h-yslant)+i, color, flags); \
 	ybase = (h-yslant)+i; \
-	V_DrawFill(x+i, y+offset, udw, ybase, color|flags); \
+	drawfill(x+i, y+offset, udw, ybase, color, flags); \
 	for (j = 0; j < yslant; j++) \
-		V_DrawFill(x+i+j+udw, y+offset, 1, (ybase-(j+1)), color|flags); \
+		drawfill(x+i+j+udw, y+offset, 1, (ybase-(j+1)), color, flags); }
 
 	if (moveup)
 	{
@@ -1386,7 +1394,8 @@ void ST_drawTouchDPad(
 	{
 		col = 16;
 		offs = 0;
-		drawupbutton(29, shadow);
+		if (alphalevel >= 10)
+			drawupbutton(29, shadow);
 	}
 
 	drawupbutton(col, offs);
@@ -1397,10 +1406,10 @@ void ST_drawTouchDPad(
 	base = (w - xslant);
 	ybase = (y + h) - vid.dup;
 
-#define drawrightbutton(color, offset) \
-	V_DrawFill(x+base-(vid.dup), y+offset, base+(vid.dup), h, color|flags); \
+#define drawrightbutton(color, offset) { \
+	drawfill(x+base-(vid.dup), y+offset, base+(vid.dup), h, color, flags); \
 	for (i = 0; i < xslant; i++) \
-		V_DrawFill(x+(base-(vid.dup))-i-(vid.dup), (y+i)+offset, vid.dup, h-(i*2), color|flags);
+		drawfill(x+(base-(vid.dup))-i-(vid.dup), (y+i)+offset, vid.dup, h-(i*2), color, flags); }
 
 	if (moveright)
 	{
@@ -1411,7 +1420,8 @@ void ST_drawTouchDPad(
 	{
 		col = 16;
 		offs = 0;
-		drawrightbutton(29, shadow);
+		if (alphalevel >= 10)
+			drawrightbutton(29, shadow);
 	}
 
 	drawrightbutton(col, offs);
@@ -1425,13 +1435,13 @@ void ST_drawTouchDPad(
 	base = w;
 	ybase = (y + h);
 
-#define drawdownbutton(color, offset) \
+#define drawdownbutton(color, offset) { \
 	for (i = 0; i < yslant; i++) \
-		V_DrawFill(x+i, (y+(yslant-i)) + offset, 1, (h-yslant)+i, color|flags); \
+		drawfill(x+i, (y+(yslant-i)) + offset, 1, (h-yslant)+i, color, flags); \
 	ybase = (h-yslant)+i; \
-	V_DrawFill(x+i, y+offset, udw, ybase, color|flags); \
+	drawfill(x+i, y+offset, udw, ybase, color, flags); \
 	for (j = 0; j < yslant; j++) \
-		V_DrawFill(x+i+j+udw, ((y+(yslant-i))+j) + 1 + offset, 1, (ybase-(j+1)), color|flags);
+		drawfill(x+i+j+udw, ((y+(yslant-i))+j) + 1 + offset, 1, (ybase-(j+1)), color, flags); }
 
 	if (movedown)
 	{
@@ -1442,7 +1452,8 @@ void ST_drawTouchDPad(
 	{
 		col = 16;
 		offs = 0;
-		drawdownbutton(29, shadow);
+		if (alphalevel >= 10)
+			drawdownbutton(29, shadow);
 	}
 
 	drawdownbutton(col, offs);
@@ -1451,14 +1462,30 @@ void ST_drawTouchDPad(
 #undef drawrightbutton
 #undef drawupbutton
 #undef drawleftbutton
+#undef drawfill
 #undef SCALEPAD
 }
 
-void ST_drawTouchJoystick(INT32 dpadx, INT32 dpady, INT32 dpadw, INT32 dpadh, INT32 flags, boolean cursor)
+void ST_drawTouchJoystick(INT32 dpadx, INT32 dpady, INT32 dpadw, INT32 dpadh, UINT8 color, INT32 flags)
 {
+	patch_t *cursor = W_CachePatchName("DSHADOW", PU_PATCH);
 	fixed_t dupx = vid.dup*FRACUNIT;
 	fixed_t dupy = vid.dup*FRACUNIT;
 
+	// generate colormap
+	static UINT8 *colormap = NULL;
+	static UINT8 lastcolor = 0;
+	size_t colsize = 256 * sizeof(UINT8);
+
+	if (colormap == NULL)
+		colormap = Z_Calloc(colsize, PU_STATIC, NULL);
+	if (color != lastcolor)
+	{
+		memset(colormap, color, colsize);
+		lastcolor = color;
+	}
+
+	// scale coords
 	INT32 x = FixedMul(dpadx * FRACUNIT, dupx) / FRACUNIT;
 	INT32 y = FixedMul(dpady * FRACUNIT, dupy) / FRACUNIT;
 	INT32 w = FixedMul(dpadw * FRACUNIT, dupx) / FRACUNIT;
@@ -1467,32 +1494,24 @@ void ST_drawTouchJoystick(INT32 dpadx, INT32 dpady, INT32 dpadw, INT32 dpadh, IN
 	INT32 stickx = max(-TOUCHJOYEXTENDX, min(touchjoyxmove * TOUCHJOYEXTENDX, TOUCHJOYEXTENDX));
 	INT32 sticky = max(-TOUCHJOYEXTENDY, min(touchjoyymove * TOUCHJOYEXTENDY, TOUCHJOYEXTENDY));
 
-	ST_drawJoystickBacking(dpadx, dpady, dpadw, dpadh, FRACUNIT, 20);
+	fixed_t xscale = FixedDiv(dpadw*FRACUNIT, SHORT(cursor->width)*FRACUNIT) / 2;
+	fixed_t yscale = FixedDiv(dpadh*FRACUNIT, SHORT(cursor->height)*FRACUNIT) / 2;
 
-	if (cursor)
-	{
-		patch_t *cursor = W_CachePatchName("STJRBABY", PU_PATCH);
-		fixed_t size = FixedDiv(min(dpadw, dpadh)*FRACUNIT, SHORT(cursor->width)*FRACUNIT) / 2;
-		V_DrawFixedPatch(
-		((x*FRACUNIT + (w*FRACUNIT / 2)) - (((SHORT(cursor->width) * vid.dup) / 2) * size)) + (stickx * vid.dup * FRACUNIT),
-		((y*FRACUNIT + (h*FRACUNIT / 2)) - (((SHORT(cursor->height) * vid.dup) / 2) * size)) + (sticky * vid.dup * FRACUNIT),
-		size, V_NOSCALESTART, cursor, NULL);
-	}
-	else
-	{
-		INT32 size = (min(dpadw, dpadh) / 4);
-		V_DrawFill(
-		((x + (w / 2)) - ((size * vid.dup) / 2)) + stickx,
-		((y + (h / 2)) - ((size * vid.dup) / 2)) + sticky,
-		size * vid.dup, size * vid.dup, flags|40);
-	}
+	ST_drawJoystickBacking(dpadx, dpady, dpadw, dpadh, FRACUNIT, 20, flags);
+
+	V_DrawStretchyFixedPatch(
+		((x*FRACUNIT + (w*FRACUNIT / 2)) - (((SHORT(cursor->width) * vid.dup) / 2) * xscale)) + (stickx * vid.dup * FRACUNIT),
+		((y*FRACUNIT + (h*FRACUNIT / 2)) - (((SHORT(cursor->height) * vid.dup) / 2) * yscale)) + (sticky * vid.dup * FRACUNIT),
+		xscale, yscale, flags, cursor, colormap);
 }
 
 void ST_drawTouchGameInput(boolean drawgamecontrols)
 {
 	fixed_t dupx = vid.dup*FRACUNIT;
 	fixed_t dupy = vid.dup*FRACUNIT;
-	const INT32 flags = V_NOSCALESTART;
+	const INT32 trans = min(cv_touchtrans.value, st_translucency);
+	const INT32 transflag = ((10-trans)<<V_ALPHASHIFT);
+	const INT32 flags = (transflag | V_NOSCALESTART);
 	const INT32 accent = (stplyr->skincolor ? skincolors[stplyr->skincolor-1].ramp[4] : 0);
 	const INT32 shadow = vid.dup;
 	INT32 col, offs;
@@ -1503,7 +1522,7 @@ void ST_drawTouchGameInput(boolean drawgamecontrols)
 	touchconfig_t *tup = &touchcontrols[GC_FORWARD];
 	touchconfig_t *tdown = &touchcontrols[GC_BACKWARD];
 
-	if (!G_InGameInput())
+	if (!trans)
 		return;
 
 	// Draw movement control
@@ -1522,8 +1541,14 @@ void ST_drawTouchGameInput(boolean drawgamecontrols)
 				true, flags, accent);
 		}
 		else // Draw the joystick
-			ST_drawTouchJoystick(touch_dpad_x, touch_dpad_y, touch_dpad_w, touch_dpad_h, flags, false);
+			ST_drawTouchJoystick(touch_dpad_x, touch_dpad_y, touch_dpad_w, touch_dpad_h, accent, flags);
 	}
+
+#define drawfill(dx, dy, dw, dh, dcol, dflags) \
+	if (trans < 10) \
+		V_DrawFadeFill(dx, dy, dw, dh, dflags, dcol, trans); \
+	else \
+		V_DrawFill(dx, dy, dw, dh, dcol|dflags);
 
 #define DEFAULTKEYCOL 16 // Because of macro expansion, this define needs to be up here.
 #define drawbutton(gctype, butt, str, strxoffs, stryoffs, keycol) { \
@@ -1541,9 +1566,9 @@ void ST_drawTouchGameInput(boolean drawgamecontrols)
 		{ \
 			col = keycol; \
 			offs = 0; \
-			V_DrawFill(x, y + h, w, shadow, 29|flags); \
+			drawfill(x, y + h, w, shadow, 29, flags); \
 		} \
-		V_DrawFill(x, y + offs, w, h, col|flags); \
+		drawfill(x, y + offs, w, h, col, flags); \
 		V_DrawString((x + (w / 2)) - (V_StringWidth(keystr, flags) / 2) + strxoffs, \
 					((y + (h / 2)) - ((8*vid.dup) / 2) + offs) + stryoffs, \
 					flags, keystr); \
@@ -1588,13 +1613,18 @@ void ST_drawTouchMenuInput(void)
 {
 	fixed_t dupx = vid.dup*FRACUNIT;
 	fixed_t dupy = vid.dup*FRACUNIT;
-	const INT32 flags = V_NOSCALESTART;
+	const INT32 trans = min(cv_touchmenutrans.value, st_translucency);
+	const INT32 transflag = ((10-trans)<<V_ALPHASHIFT);
+	const INT32 flags = (transflag | V_NOSCALESTART);
 	const INT32 accent = skincolors[(cv_playercolor.value)-1].ramp[4];
 	const INT32 shadow = vid.dup;
 	touchconfig_t *control;
 	INT32 col, offs;
 	INT32 x, y, w, h;
 	patch_t *font;
+
+	if (!trans)
+		return;
 
 #define drawbutt(keyname, symb) \
 	control = &touchnavigation[keyname]; \
@@ -1610,10 +1640,11 @@ void ST_drawTouchMenuInput(void)
 		{ \
 			col = 16; \
 			offs = 0; \
-			V_DrawFill(x, y + h, w, shadow, 29|flags); \
+			if (trans >= 10) \
+				V_DrawFill(x, y + h, w, shadow, 29|flags); \
 		} \
 		font = hu_font.chars[toupper(symb) - FONTSTART]; \
-		V_DrawFill(x, y + offs, w, h, col|flags); \
+		drawfill(x, y + offs, w, h, col, flags); \
 		V_DrawCharacter((x + (w / 2)) - ((SHORT(font->width)*vid.dup) / 2), \
 						(y + (h / 2)) - ((SHORT(font->height)*vid.dup) / 2) + offs, \
 						symb|flags, false); \
@@ -1624,6 +1655,7 @@ void ST_drawTouchMenuInput(void)
 	drawbutt(KEY_CONSOLE, '$');
 
 #undef drawbutt
+#undef drawfill
 }
 
 #undef SCALEBUTTON
@@ -3227,7 +3259,7 @@ static void ST_overlayDrawer(void)
 	if ((cv_showinput.value && !players[displayplayer].spectator) || (modeattacking && !(demoplayback && hu_showscores)))
 		ST_drawInput();
 #ifdef TOUCHINPUTS
-	else if (!demoplayback)
+	else if (G_InGameInput() && !demoplayback)
 		ST_drawTouchGameInput(drawtouchcontrols && (stplyr == &players[consoleplayer]));
 #endif
 

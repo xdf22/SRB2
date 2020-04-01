@@ -207,13 +207,14 @@ enum
 
 // Touch screen settings
 extern touchmovementstyle_e touch_movementstyle;
-extern boolean touch_dpad_tiny;
+extern boolean touch_tinycontrols;
 extern boolean touch_camera;
 
 // Console variables for the touch screen
-extern consvar_t cv_dpadstyle;
-extern consvar_t cv_dpadtiny;
+extern consvar_t cv_touchstyle;
+extern consvar_t cv_touchtiny;
 extern consvar_t cv_touchcamera;
+extern consvar_t cv_touchtrans, cv_touchmenutrans;
 
 // Touch screen sensitivity
 extern consvar_t cv_touchsens, cv_touchysens;
