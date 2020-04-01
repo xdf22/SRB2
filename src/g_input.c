@@ -45,8 +45,9 @@ mouse_t mouse2;
 
 // joystick values are repeated
 INT32 joyxmove[JOYAXISSET], joyymove[JOYAXISSET], joy2xmove[JOYAXISSET], joy2ymove[JOYAXISSET];
+
 #ifdef TOUCHINPUTS
-float touchjoyxmove, touchjoyymove;
+float touchxmove, touchymove, touchpressure;
 #endif
 
 // current state of the keys: true if pushed
@@ -235,7 +236,7 @@ void G_MapEventsToControls(event_t *ev)
 			// Ignore when the menu, console, or chat window are open
 			if (!G_InGameInput())
 			{
-				touchjoyxmove = touchjoyymove = 0.0f;
+				touchxmove = touchymove = touchpressure = 0.0f;
 				break;
 			}
 
@@ -415,8 +416,9 @@ void G_MapEventsToControls(event_t *ev)
 						G_ScaleDPadCoords(&padx, &pady, &padw, &padh);
 						dx = x - (padx + (padw / 2));
 						dy = y - (pady + (padh / 2));
-						touchjoyxmove = ((float)dx / (float)TOUCHJOYEXTENDX);
-						touchjoyymove = ((float)dy / (float)TOUCHJOYEXTENDY);
+						touchxmove = ((float)dx / (float)TOUCHJOYEXTENDX);
+						touchymove = ((float)dy / (float)TOUCHJOYEXTENDY);
+						touchpressure = ev->pressure;
 					}
 					// Mouse
 					else if (touch_camera && finger->type.mouse == FINGERMOTION_MOUSE)
@@ -452,7 +454,7 @@ void G_MapEventsToControls(event_t *ev)
 
 			// Reset joystick movement.
 			if (finger->type.joystick == FINGERMOTION_JOYSTICK)
-				touchjoyxmove = touchjoyymove = 0.0f;
+				touchxmove = touchymove = touchpressure = 0.0f;
 
 			// Remember that this is an union!
 			finger->type.mouse = 0;

@@ -1471,6 +1471,7 @@ void ST_drawTouchJoystick(INT32 dpadx, INT32 dpady, INT32 dpadw, INT32 dpadh, UI
 	patch_t *cursor = W_CachePatchName("DSHADOW", PU_PATCH);
 	fixed_t dupx = vid.dup*FRACUNIT;
 	fixed_t dupy = vid.dup*FRACUNIT;
+	fixed_t pressure = max(FRACUNIT/100, FRACUNIT - FLOAT_TO_FIXED(touchpressure));
 
 	// generate colormap
 	static UINT8 *colormap = NULL;
@@ -1491,14 +1492,24 @@ void ST_drawTouchJoystick(INT32 dpadx, INT32 dpady, INT32 dpadw, INT32 dpadh, UI
 	INT32 w = FixedMul(dpadw * FRACUNIT, dupx) / FRACUNIT;
 	INT32 h = FixedMul(dpadh * FRACUNIT, dupy) / FRACUNIT;
 
-	INT32 stickx = max(-TOUCHJOYEXTENDX, min(touchjoyxmove * TOUCHJOYEXTENDX, TOUCHJOYEXTENDX));
-	INT32 sticky = max(-TOUCHJOYEXTENDY, min(touchjoyymove * TOUCHJOYEXTENDY, TOUCHJOYEXTENDY));
+	INT32 stickx = max(-TOUCHJOYEXTENDX, min(touchxmove * TOUCHJOYEXTENDX, TOUCHJOYEXTENDX));
+	INT32 sticky = max(-TOUCHJOYEXTENDY, min(touchymove * TOUCHJOYEXTENDY, TOUCHJOYEXTENDY));
 
-	fixed_t xscale = FixedDiv(dpadw*FRACUNIT, SHORT(cursor->width)*FRACUNIT) / 2;
-	fixed_t yscale = FixedDiv(dpadh*FRACUNIT, SHORT(cursor->height)*FRACUNIT) / 2;
+	fixed_t basexscale = FixedDiv(dpadw*FRACUNIT, SHORT(cursor->width)*FRACUNIT);
+	fixed_t baseyscale = FixedDiv(dpadh*FRACUNIT, SHORT(cursor->height)*FRACUNIT);
+	fixed_t xscale = FixedMul(pressure, (basexscale / 2));
+	fixed_t yscale = FixedMul(pressure, (baseyscale / 2));
 
+	// O backing
 	ST_drawJoystickBacking(dpadx, dpady, dpadw, dpadh, FRACUNIT, 20, flags);
 
+	// hole
+	V_DrawStretchyFixedPatch(
+		((x*FRACUNIT + (w*FRACUNIT / 2)) - (((SHORT(cursor->width) * vid.dup) / 2) * (basexscale / 4))),
+		((y*FRACUNIT + (h*FRACUNIT / 2)) - (((SHORT(cursor->height) * vid.dup) / 2) * (baseyscale / 4))),
+		(basexscale / 4), (baseyscale / 4), flags, cursor, NULL);
+
+	// stick
 	V_DrawStretchyFixedPatch(
 		((x*FRACUNIT + (w*FRACUNIT / 2)) - (((SHORT(cursor->width) * vid.dup) / 2) * xscale)) + (stickx * vid.dup * FRACUNIT),
 		((y*FRACUNIT + (h*FRACUNIT / 2)) - (((SHORT(cursor->height) * vid.dup) / 2) * yscale)) + (sticky * vid.dup * FRACUNIT),
@@ -1613,7 +1624,7 @@ void ST_drawTouchMenuInput(void)
 {
 	fixed_t dupx = vid.dup*FRACUNIT;
 	fixed_t dupy = vid.dup*FRACUNIT;
-	const INT32 trans = min(cv_touchmenutrans.value, st_translucency);
+	const INT32 trans = cv_touchmenutrans.value;
 	const INT32 transflag = ((10-trans)<<V_ALPHASHIFT);
 	const INT32 flags = (transflag | V_NOSCALESTART);
 	const INT32 accent = skincolors[(cv_playercolor.value)-1].ramp[4];
