@@ -2300,7 +2300,7 @@ void G_Ticker(boolean run)
 	INT32 buf;
 
 	// Bot players queued for removal
-	for (i = MAXPLAYERS-1; i != UINT32_MAX; i--)
+	for (i = MAXPLAYERS-1; i <= MAXPLAYERS-1; i--)
 	{
 		if (playeringame[i] && players[i].removing)
 		{
