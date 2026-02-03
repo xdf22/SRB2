@@ -24,6 +24,7 @@ enum skin {
 	skin_wadnum,
 	skin_flags,
 	skin_realname,
+	skin_supername,
 	skin_hudname,
 	skin_ability,
 	skin_ability2,
@@ -63,6 +64,7 @@ static const char *const skin_opt[] = {
 	"flags",
 	"realname",
 	"hudname",
+	"supername",
 	"ability",
 	"ability2",
 	"thokitem",
@@ -125,6 +127,9 @@ static int skin_get(lua_State *L)
 		break;
 	case skin_hudname:
 		lua_pushstring(L, skin->hudname);
+		break;
+	case skin_supername:
+		lua_pushstring(L, skin->supername);
 		break;
 	case skin_ability:
 		lua_pushinteger(L, skin->ability);
