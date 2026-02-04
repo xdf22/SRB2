@@ -86,6 +86,15 @@
 #include "ogl_sdl.h"
 #endif
 
+#ifdef __vita__
+#include <vitasdk.h>
+#include <vita2d.h>
+#include <vitaGL.h>
+#define stricmp strcasecmp 
+#define strnicmp strncasecmp 
+vita2d_texture *gxm_texture = NULL;
+#endif
+
 // maximum number of windowed modes (see windowedModes[][])
 #define MAXWINMODES (18)
 
@@ -153,27 +162,51 @@ static SDL_bool      havefocus = SDL_TRUE;
 static const char *fallback_resolution_name = "Fallback";
 
 // windowed video modes from which to choose from.
+#if defined(__vita__)
+	static INT32 windowedModes[MAXWINMODES][2] =
+	{
+		{ 960, 544},
+		{ 960, 544},
+		{ 960, 544},
+		{ 960, 544},
+		{ 960, 544},
+		{ 960, 544},
+		{ 960, 544},
+		{ 960, 544},
+		{ 480, 272},
+		{ 960, 544}, 
+		{ 800, 600}, // 1.33,2.50
+		{ 800, 450}, 
+		{ 640, 480}, // 1.33,2.00
+		{ 640, 400}, // 1.60,2.00
+		{ 640, 360},
+		{ 320, 240}, // 1.33,1.00
+		{ 320, 200}, // 1.60,1.00
+		{ 320, 180},
+	};
+#else
 static INT32 windowedModes[MAXWINMODES][2] =
-{
-	{1920,1200}, // 1.60,6.00
-	{1920,1080}, // 1.66
-	{1680,1050}, // 1.60,5.25
-	{1600,1200}, // 1.33
-	{1600, 900}, // 1.66
-	{1366, 768}, // 1.66
-	{1440, 900}, // 1.60,4.50
-	{1280,1024}, // 1.33?
-	{1280, 960}, // 1.33,4.00
-	{1280, 800}, // 1.60,4.00
-	{1280, 720}, // 1.66
-	{1152, 864}, // 1.33,3.60
-	{1024, 768}, // 1.33,3.20
-	{ 800, 600}, // 1.33,2.50
-	{ 640, 480}, // 1.33,2.00
-	{ 640, 400}, // 1.60,2.00
-	{ 320, 240}, // 1.33,1.00
-	{ 320, 200}, // 1.60,1.00
-};
+	{
+		{1920,1200}, // 1.60,6.00
+		{1920,1080}, // 1.66
+		{1680,1050}, // 1.60,5.25
+		{1600,1200}, // 1.33
+		{1600, 900}, // 1.66
+		{1366, 768}, // 1.66
+		{1440, 900}, // 1.60,4.50
+		{1280,1024}, // 1.33?
+		{1280, 960}, // 1.33,4.00
+		{1280, 800}, // 1.60,4.00
+		{1280, 720}, // 1.66
+		{1152, 864}, // 1.33,3.60
+		{1024, 768}, // 1.33,3.20
+		{ 800, 600}, // 1.33,2.50
+		{ 640, 480}, // 1.33,2.00
+		{ 640, 400}, // 1.60,2.00
+		{ 320, 240}, // 1.33,1.00
+		{ 320, 200}, // 1.60,1.00
+	};
+#endif
 
 static void Impl_VideoSetupSDLBuffer(void);
 static void Impl_VideoSetupBuffer(void);
@@ -239,6 +272,10 @@ static void SDLSetMode(INT32 width, INT32 height, SDL_bool fullscreen, SDL_bool 
 
 	if (rendermode == render_soft)
 	{
+#ifdef __vita__
+		vita2d_texture_set_alloc_memblock_type(SCE_KERNEL_MEMBLOCK_TYPE_USER_RW);
+		gxm_texture = vita2d_create_empty_texture_format(width, height, SCE_GXM_TEXTURE_FORMAT_P8_ABGR);
+#else
 		SDL_RenderClear(renderer);
 		SDL_RenderSetLogicalSize(renderer, width, height);
 		// Set up Texture
@@ -273,6 +310,7 @@ static void SDLSetMode(INT32 width, INT32 height, SDL_bool fullscreen, SDL_bool 
 		}
 		SDL_PixelFormatEnumToMasks(sw_texture_format, &bpp, &rmask, &gmask, &bmask, &amask);
 		vidSurface = SDL_CreateRGBSurface(0, width, height, bpp, rmask, gmask, bmask, amask);
+#endif
 	}
 }
 
@@ -1182,11 +1220,19 @@ void I_UpdateNoBlit(void)
 		}
 		else
 #endif
+#ifdef __vita__
+	vita2d_start_drawing();
+	vita2d_draw_texture_scale(gxm_texture, 0, 0, 2.0, 2.0);
+	vita2d_end_drawing();
+	vita2d_wait_rendering_done();
+	vita2d_swap_buffers();
+#else
 		if (rendermode == render_soft)
 		{
 			SDL_RenderCopy(renderer, texture, NULL, NULL);
 			SDL_RenderPresent(renderer);
 		}
+#endif
 	}
 	exposevideo = SDL_FALSE;
 }
@@ -1253,6 +1299,14 @@ void I_FinishUpdate(void)
 
 	if (rendermode == render_soft && screens[0])
 	{
+#ifdef __vita__
+		memcpy(vita2d_texture_get_datap(gxm_texture), screens[0], vid.width * vid.height);
+		vita2d_start_drawing();
+		vita2d_draw_texture_scale(gxm_texture, 0, 0, 2.0, 2.0);
+		vita2d_end_drawing();
+		vita2d_wait_rendering_done();
+		vita2d_swap_buffers();
+#else
 		if (!bufSurface) //Double-Check
 		{
 			Impl_VideoSetupSDLBuffer();
@@ -1270,6 +1324,7 @@ void I_FinishUpdate(void)
 		SDL_RenderClear(renderer);
 		SDL_RenderCopy(renderer, texture, &src_rect, NULL);
 		SDL_RenderPresent(renderer);
+#endif
 	}
 #ifdef HWRENDER
 	else if (rendermode == render_opengl)
@@ -1310,16 +1365,28 @@ void I_ReadScreen(UINT8 *scr)
 //
 void I_SetPalette(RGBA_t *palette)
 {
+#ifdef __vita__
+	uint8_t *tex_pal = (uint8_t*)vita2d_texture_get_palette(gxm_texture);
+#endif
 	size_t i;
 	for (i=0; i<256; i++)
 	{
 		localPalette[i].r = palette[i].s.red;
 		localPalette[i].g = palette[i].s.green;
 		localPalette[i].b = palette[i].s.blue;
+#ifdef __vita__
+		tex_pal[0] = localPalette[i].r;
+		tex_pal[1] = localPalette[i].g;
+		tex_pal[2] = localPalette[i].b;
+		tex_pal[3] = 0xFF;
+		tex_pal += 4;
+#endif
 	}
 	//if (vidSurface) SDL_SetPaletteColors(vidSurface->format->palette, localPalette, 0, 256);
 	// Fury -- SDL2 vidSurface is a 32-bit surface buffer copied to the texture. It's not palletized, like bufSurface.
+#ifndef __vita__
 	if (bufSurface) SDL_SetPaletteColors(bufSurface->format->palette, localPalette, 0, 256);
+#endif
 }
 
 // return number of fullscreen + X11 modes
@@ -1773,6 +1840,8 @@ static void Impl_VideoSetupBuffer(void)
 	}
 }
 
+
+
 void I_StartupGraphics(void)
 {
 	if (dedicated)
@@ -2027,5 +2096,5 @@ UINT32 I_GetRefreshRate(void)
 	// well for windowed mode since you can drag
 	// the window around, but very slow PCs might have
 	// trouble querying mode over and over again.
-	return refresh_rate;
+	return 60; // 60 instead of refresh_rate
 }

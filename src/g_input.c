@@ -360,7 +360,22 @@ static keyname_t keynames[] =
 	{KEY_JOY1+29, "joy30"},
 	{KEY_JOY1+30, "joy31"},
 	{KEY_JOY1+31, "joy32"},
+#elif defined (__vita__)
+	{KEY_JOY1+0, "TRIANGLE"},
+	{KEY_JOY1+1, "CIRCLE"  },
+	{KEY_JOY1+2, "CROSS"   },
+	{KEY_JOY1+3, "SQUARE"  },
+	{KEY_JOY1+4, "LTRIGGER"},
+	{KEY_JOY1+5, "RTRIGGER"},
+	{KEY_JOY1+6, "DOWNARROW"},
+	{KEY_JOY1+7, "LEFTARROW"},
+	{KEY_JOY1+8, "UPARROW" },
+	{KEY_JOY1+9, "RIGHTARROW"},
+	{KEY_JOY1+10,"SELECT"  },
+	{KEY_JOY1+11,"START"   },
+#define NOMOREJOYBTN_1S
 #endif
+#ifndef __vita__
 	// the DOS version uses Allegro's joystick support
 	{KEY_HAT1+0, "hatup"},
 	{KEY_HAT1+1, "hatdown"},
@@ -378,6 +393,7 @@ static keyname_t keynames[] =
 	{KEY_HAT1+13, "hatdown4"},
 	{KEY_HAT1+14, "hatleft4"},
 	{KEY_HAT1+15, "hatright4"},
+#endif
 
 	{KEY_DBLMOUSE1+0, "dblmouse1"},
 	{KEY_DBLMOUSE1+1, "dblmouse2"},
@@ -429,7 +445,22 @@ static keyname_t keynames[] =
 	{KEY_DBLJOY1+29, "dbljoy30"},
 	{KEY_DBLJOY1+30, "dbljoy31"},
 	{KEY_DBLJOY1+31, "dbljoy32"},
+#elif defined (__vita__)
+	{KEY_DBLJOY1+0, "DBLTRIANGLE"},
+	{KEY_DBLJOY1+1, "DBLCIRCLE"  },
+	{KEY_DBLJOY1+2, "DBLCROSS"   },
+	{KEY_DBLJOY1+3, "DBLSQUARE"  },
+	{KEY_DBLJOY1+4, "DBLLTRIGGER"},
+	{KEY_DBLJOY1+5, "DBLRTRIGGER"},
+	{KEY_DBLJOY1+6, "DBLDOWNARROW"},
+	{KEY_DBLJOY1+7, "DBLLEFTARROW"},
+	{KEY_DBLJOY1+8, "DBLUPARROW" },
+	{KEY_DBLJOY1+9, "DBLRIGHTARROW"},
+	{KEY_DBLJOY1+10,"DBLSELECT"  },
+	{KEY_DBLJOY1+11,"DBLSTART"   },
+#define NOMOREJOYBTN_1DBL
 #endif
+#ifndef __vita__
 	{KEY_DBLHAT1+0, "dblhatup"},
 	{KEY_DBLHAT1+1, "dblhatdown"},
 	{KEY_DBLHAT1+2, "dblhatleft"},
@@ -446,6 +477,7 @@ static keyname_t keynames[] =
 	{KEY_DBLHAT1+13, "dblhatdown4"},
 	{KEY_DBLHAT1+14, "dblhatleft4"},
 	{KEY_DBLHAT1+15, "dblhatright4"},
+#endif
 
 	{KEY_2JOY1+0, "sec_joy1"},
 	{KEY_2JOY1+1, "sec_joy2"},
@@ -481,7 +513,22 @@ static keyname_t keynames[] =
 	{KEY_2JOY1+29, "sec_joy30"},
 	{KEY_2JOY1+30, "sec_joy31"},
 	{KEY_2JOY1+31, "sec_joy32"},
+#elif defined (__vita__)
+	{KEY_2JOY1+0, "SEC_TRIANGLE"},
+	{KEY_2JOY1+1, "SEC_CIRCLE"  },
+	{KEY_2JOY1+2, "SEC_CROSS"   },
+	{KEY_2JOY1+3, "SEC_SQUARE"  },
+	{KEY_2JOY1+4, "SEC_LTRIGGER"},
+	{KEY_2JOY1+5, "SEC_RTRIGGER"},
+	{KEY_2JOY1+6, "SEC_DOWNARROW"},
+	{KEY_2JOY1+7, "SEC_LEFTARROW"},
+	{KEY_2JOY1+8, "SEC_UPARROW" },
+	{KEY_2JOY1+9, "SEC_RIGHTARROW"},
+	{KEY_2JOY1+10, "SEC_SELECT"  },
+	{KEY_2JOY1+11, "SEC_START"   },
+#define NOMOREJOYBTN_2S
 #endif
+#ifndef __vita__
 	// the DOS version uses Allegro's joystick support
 	{KEY_2HAT1+0,  "sec_hatup"},
 	{KEY_2HAT1+1,  "sec_hatdown"},
@@ -499,6 +546,7 @@ static keyname_t keynames[] =
 	{KEY_2HAT1+13, "sec_hatdown4"},
 	{KEY_2HAT1+14, "sec_hatleft4"},
 	{KEY_2HAT1+15, "sec_hatright4"},
+#endif
 
 	{KEY_DBL2JOY1+0, "dblsec_joy1"},
 	{KEY_DBL2JOY1+1, "dblsec_joy2"},
@@ -533,7 +581,22 @@ static keyname_t keynames[] =
 	{KEY_DBL2JOY1+29, "dblsec_joy30"},
 	{KEY_DBL2JOY1+30, "dblsec_joy31"},
 	{KEY_DBL2JOY1+31, "dblsec_joy32"},
+#elif defined (__vita__)
+	{KEY_DBL2JOY1+0, "DBLSEC_TRIANGLE"},
+	{KEY_DBL2JOY1+1, "DBLSEC_CIRCLE"  },
+	{KEY_DBL2JOY1+2, "DBLSEC_CROSS"   },
+	{KEY_DBL2JOY1+3, "DBLSEC_SQUARE"  },
+	{KEY_DBL2JOY1+4, "DBLSEC_LTRIGGER"},
+	{KEY_DBL2JOY1+5, "DBLSEC_RTRIGGER"},
+	{KEY_DBL2JOY1+6, "DBLSEC_DOWNARROW"},
+	{KEY_DBL2JOY1+7, "DBLSEC_LEFTARROW"},
+	{KEY_DBL2JOY1+8, "DBLSEC_UPARROW" },
+	{KEY_DBL2JOY1+9, "DBLSEC_RIGHTARROW"},
+	{KEY_DBL2JOY1+10,"DBLSEC_SELECT"  },
+	{KEY_DBL2JOY1+11,"DBLSEC_START"   },
+#define NOMOREJOYBTN_2DBL
 #endif
+#ifndef __vita__
 	{KEY_DBL2HAT1+0, "dblsec_hatup"},
 	{KEY_DBL2HAT1+1, "dblsec_hatdown"},
 	{KEY_DBL2HAT1+2, "dblsec_hatleft"},
@@ -550,6 +613,7 @@ static keyname_t keynames[] =
 	{KEY_DBL2HAT1+13, "dblsec_hatdown4"},
 	{KEY_DBL2HAT1+14, "dblsec_hatleft4"},
 	{KEY_DBL2HAT1+15, "dblsec_hatright4"},
+#endif
 
 };
 
@@ -676,6 +740,23 @@ void G_DefineDefaultControls(void)
 {
 	INT32 i;
 
+#if defined (__vita__)
+void G_Controldefault(void)
+{
+	gamecontroldefault[gcs_fps][GC_FORWARD][0] = KEY_JOY1+8; // Up
+	gamecontroldefault[gcs_fps][GC_BACKWARD][0] = KEY_JOY1+6; // Down
+	gamecontroldefault[gcs_fps][GC_TURNLEFT][0] = KEY_JOY1+7; // Left
+	gamecontroldefault[gcs_fps][GC_TURNRIGHT][0] = KEY_JOY1+9; // Right
+	gamecontroldefault[gcs_fps][GC_STRAFELEFT][0] = KEY_JOY1+4; // L
+	gamecontroldefault[gcs_fps][GC_STRAFERIGHT][0] = KEY_JOY1+5; // R
+	gamecontroldefault[gcs_fps][GC_TOSSFLAG][0] = KEY_JOY1+0; // Triangle
+	gamecontroldefault[gcs_fps][GC_SPIN][0] = KEY_JOY1+1; // Circle
+	gamecontroldefault[gcs_fps][GC_CAMTOGGLE][0] = KEY_JOY1+10; // Select
+	gamecontroldefault[gcs_fps][GC_CAMRESET][0] = KEY_JOY1+3; // Square
+	gamecontroldefault[gcs_fps][GC_PAUSE][0] = KEY_JOY1+11; // Start
+	gamecontroldefault[gcs_fps][GC_JUMP][0] = KEY_JOY1+2; // Cross
+}
+#else
 	// FPS game controls (WASD)
 	gamecontroldefault[gcs_fps][GC_FORWARD    ][0] = 'w';
 	gamecontroldefault[gcs_fps][GC_BACKWARD   ][0] = 's';
@@ -695,6 +776,7 @@ void G_DefineDefaultControls(void)
 	gamecontroldefault[gcs_fps][GC_CUSTOM1    ][0] = 'z';
 	gamecontroldefault[gcs_fps][GC_CUSTOM2    ][0] = 'x';
 	gamecontroldefault[gcs_fps][GC_CUSTOM3    ][0] = 'c';
+#endif // ifdef __vita__
 
 	// Platform game controls (arrow keys), currently unused
 	gamecontroldefault[gcs_platform][GC_FORWARD    ][0] = KEY_UPARROW;

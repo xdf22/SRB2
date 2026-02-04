@@ -47,8 +47,11 @@
 #else
 	#ifdef USE_WINSOCK1
 		#include <winsock.h>
-	#else
-		#ifndef USE_WINSOCK
+		#elif defined(__vita__)
+			//#include <netinet/in.h>
+			//#include <sys/socket.h>
+			#define NONET
+		#elif !defined(USE_WINSOCK) && !defined(__vita__)
 			#include <arpa/inet.h>
 			#ifdef __APPLE_CC__
 				#ifndef _BSD_SOCKLEN_T_
@@ -107,6 +110,7 @@
 		#endif
 	#endif // USE_WINSOCK
 
+#ifndef __vita__
 	typedef union
 	{
 		struct sockaddr     any;
@@ -115,6 +119,7 @@
 		struct sockaddr_in6 ip6;
 	#endif
 	} mysockaddr_t;
+#endif
 
 	#ifdef HAVE_MINIUPNPC
 		#ifdef STATIC_MINIUPNPC
@@ -126,8 +131,6 @@
 		#undef STATICLIB
 		static UINT8 UPNP_support = TRUE;
 	#endif // HAVE_MINIUPNC
-
-#endif // !NONET
 
 #define MAXBANS 100
 

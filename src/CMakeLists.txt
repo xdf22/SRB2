@@ -180,8 +180,8 @@ endif()
 target_link_libraries(SRB2SDL2 PRIVATE openmpt)
 target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_OPENMPT)
 
-target_link_libraries(SRB2SDL2 PRIVATE ZLIB::ZLIB PNG::PNG CURL::libcurl)
-target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_ZLIB -DHAVE_PNG -DHAVE_CURL -D_LARGEFILE64_SOURCE)
+target_link_libraries(SRB2SDL2 PRIVATE ZLIB::ZLIB PNG::PNG CURL::libcurl vita2d m)
+target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_ZLIB -DHAVE_PNG -DHAVE_CURL)
 target_sources(SRB2SDL2 PRIVATE apng.c)
 
 set(SRB2_HAVE_THREADS ON)
@@ -389,9 +389,6 @@ if(SRB2_CONFIG_PROFILEMODE AND "${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
 endif()
 
 add_subdirectory(sdl)
-if(SRB2_CONFIG_ENABLE_TESTS)
-	add_subdirectory(tests)
-endif()
 
 # strip debug symbols into separate file when using gcc.
 # to be consistent with Makefile, don't generate for OS X.

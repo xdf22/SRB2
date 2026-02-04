@@ -31,6 +31,10 @@
 
 #include <time.h>
 
+#ifdef __vita__
+#include <vitasdk.h>
+#endif
+
 #include "doomdef.h"
 #include "am_map.h"
 #include "console.h"
@@ -92,6 +96,11 @@
 #endif
 
 #include "lua_script.h"
+
+#ifdef __vita__
+#include <vitasdk.h>
+int _newlib_heap_size_user = 192 * 1024 * 1024;
+#endif
 
 // Version numbers for netplay :upside_down_face:
 int    VERSION;
@@ -1125,7 +1134,7 @@ static void IdentifyVersion(void)
 	char *srb2wad;
 	const char *srb2waddir = NULL;
 
-#if defined (__unix__) || defined (UNIXCOMMON) || defined (HAVE_SDL)
+#if defined (__unix__) || defined (UNIXCOMMON) || defined (HAVE_SDL) || defined(__vita__)
 	// change to the directory where 'srb2.pk3' is found
 	srb2waddir = I_LocateWad();
 #endif
@@ -1309,7 +1318,7 @@ void D_SRB2Main(void)
 
 		if (!userhome)
 		{
-#if (defined (__unix__) || defined (__APPLE__) || defined (UNIXCOMMON)) && !defined (__CYGWIN__)
+#if (defined (__unix__) || defined (__APPLE__) || defined (UNIXCOMMON)) && !defined (__CYGWIN__) && defined(__vita__)
 			I_Error("Please set $HOME to your home directory\n");
 #else
 			if (dedicated)
@@ -1776,12 +1785,15 @@ const char *D_Home(void)
 #ifdef ANDROID
 	return "/data/data/org.srb2/";
 #endif
+#ifdef __vita__
+	return "ux0:data/srb2vita";
+#else
 
 	if (M_CheckParm("-home") && M_IsNextParm())
 		userhome = M_GetNextParm();
 	else
 	{
-#if !(defined (__unix__) || defined (__APPLE__) || defined (UNIXCOMMON))
+#if !(defined (__unix__) || defined (__APPLE__) || defined (UNIXCOMMON) || defined(__vita__))
 		if (FIL_FileOK(CONFIGFILENAME))
 			usehome = false; // Let's NOT use home
 		else
@@ -1814,6 +1826,7 @@ const char *D_Home(void)
 #endif// _WIN32
 	if (usehome) return userhome;
 	else return NULL;
+#endif
 }
 
 static boolean check_top_dir(const char **path, const char *top)

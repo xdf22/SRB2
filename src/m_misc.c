@@ -607,6 +607,7 @@ void M_SaveConfig(const char *filename)
 			filepath = Z_StrDup(filename);
 
 		f = fopen(filepath, "w");
+
 		// change it only if valid
 		if (f)
 			strcpy(configfile, filepath);
@@ -625,6 +626,7 @@ void M_SaveConfig(const char *filename)
 		}
 
 		f = fopen(configfile, "w");
+
 		if (!f)
 		{
 			CONS_Alert(CONS_ERROR, M_GetText("Couldn't save game config file %s\n"), configfile);

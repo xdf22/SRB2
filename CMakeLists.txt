@@ -4,6 +4,14 @@ if("${CMAKE_CURRENT_BINARY_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
 	message(FATAL_ERROR "In-source builds are blocked. Please build from a separate directory.")
 endif()
 
+if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
+  if(DEFINED ENV{VITASDK})
+    set(CMAKE_TOOLCHAIN_FILE "$ENV{VITASDK}/share/vita.toolchain.cmake" CACHE PATH "toolchain file")
+  else()
+    message(FATAL_ERROR "Please define VITASDK to point to your SDK path!")
+  endif()
+endif()
+
 # Set up CMAKE path
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
@@ -18,6 +26,18 @@ string(REGEX MATCH "[0-9]+\\.[0-9.]+" SRB2_VERSION ${SRB2_VERSION})
 project(SRB2
 	VERSION ${SRB2_VERSION}
 	LANGUAGES C CXX)
+
+include("${VITASDK}/share/vita.cmake" REQUIRED)
+ADD_DEFINITIONS(-D__VITA__)
+
+## Configuration options for this app
+# Display name (under bubble in LiveArea)
+set(VITA_APP_NAME "Sonic Robo BLast 2")
+# Unique ID must be exactly 9 characters. Recommended: XXXXYYYYY where X =
+# unique string of developer and Y = a unique number for this app
+set(VITA_TITLEID  "SRB202213")
+# Optional version string to show in LiveArea's more info screen
+set(VITA_VERSION  "01.00")
 
 ##### PACKAGE CONFIGURATION #####
 
@@ -47,11 +67,7 @@ include(CPack)
 
 # Options
 
-if("${CMAKE_SYSTEM_NAME}" MATCHES Linux)
-	set(SRB2_CONFIG_SYSTEM_LIBRARIES_DEFAULT ON)
-else()
-	set(SRB2_CONFIG_SYSTEM_LIBRARIES_DEFAULT OFF)
-endif()
+set(SRB2_CONFIG_SYSTEM_LIBRARIES_DEFAULT ON)
 
 # Clang tidy options will be ignored if CMAKE_<LANG>_CLANG_TIDY are set.
 option(SRB2_CONFIG_ENABLE_CLANG_TIDY_C "Enable default clang-tidy check configuration for C" OFF)
@@ -80,25 +96,6 @@ option(SRB2_CONFIG_ZDEBUG "Compile with ZDEBUG defined." OFF)
 option(SRB2_CONFIG_PROFILEMODE "Compile for profiling (GCC only)." OFF)
 set(SRB2_CONFIG_ASSET_DIRECTORY "" CACHE PATH "Path to directory that contains all asset files for the installer. If set, assets will be part of installation and cpack.")
 
-if(SRB2_CONFIG_ENABLE_TESTS)
-	# https://github.com/catchorg/Catch2
-	CPMAddPackage(
-		NAME Catch2
-		VERSION 3.4.0
-		GITHUB_REPOSITORY catchorg/Catch2
-		OPTIONS
-			"CATCH_INSTALL_DOCS OFF"
-	)
-	list(APPEND CMAKE_MODULE_PATH "${Catch2_SOURCE_DIR}/extras")
-	include(CTest)
-	include(Catch)
-	add_executable(srb2tests)
-	# To add tests, use target_sources to add individual test files to the target in subdirs.
-	target_link_libraries(srb2tests PRIVATE Catch2::Catch2 Catch2::Catch2WithMain)
-	target_compile_features(srb2tests PRIVATE c_std_11 cxx_std_17)
-	catch_discover_tests(srb2tests)
-endif()
-
 # Enable CCache
 # (Set USE_CCACHE=ON to use, CCACHE_OPTIONS for options)
 if("${CMAKE_HOST_SYSTEM_NAME}" STREQUAL Windows)
@@ -126,7 +123,6 @@ add_subdirectory(thirdparty)
 
 if("${SRB2_CONFIG_SYSTEM_LIBRARIES}")
 	find_package(ZLIB REQUIRED)
-	find_package(PNG REQUIRED)
 	find_package(SDL2 REQUIRED)
 	find_package(SDL2_mixer REQUIRED)
 	find_package(CURL REQUIRED)

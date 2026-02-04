@@ -14,12 +14,12 @@
 #ifdef HAVE_ZLIB
 #ifndef _MSC_VER
 #ifndef _LARGEFILE64_SOURCE
-#define _LARGEFILE64_SOURCE
+//#define _LARGEFILE64_SOURCE
 #endif
 #endif
 
 #ifndef _LFS64_LARGEFILE
-#define _LFS64_LARGEFILE
+//#define _LFS64_LARGEFILE
 #endif
 
 #ifndef _FILE_OFFSET_BITS
@@ -576,6 +576,11 @@ static lumpinfo_t* ResGetLumpsZip (FILE* handle, UINT16* nlmp)
 	// Look for central directory end signature near end of file.
 	// Contains entry number (number of lumps), and central directory start offset.
 	fseek(handle, 0, SEEK_END);
+#ifdef __vita__
+	//getting pk3's to work is so annoying, these are only for debugging
+	CONS_Printf("Opening PK3: %s\n", filenamebuf);
+#endif
+
 	if (!ResFindSignature(handle, pat_end, max(0, ftell(handle) - (22 + 65536))))
 	{
 		CONS_Alert(CONS_ERROR, "Missing central directory\n");

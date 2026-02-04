@@ -27,7 +27,11 @@
 #include <unistd.h>
 #endif
 
-#if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)
+#ifdef __vita
+#include <vitasdk.h>
+#endif
+
+#if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON) || defined(__vita__)
 #include <errno.h>
 #endif
 
@@ -177,6 +181,13 @@ int main(int argc, char **argv)
 {
 	myargc = argc;
 	myargv = argv; /// \todo pull out path to exe from this string
+
+#ifdef __vita__
+	scePowerSetArmClockFrequency(444);
+	scePowerSetBusClockFrequency(222);
+	scePowerSetGpuClockFrequency(222);
+	scePowerSetGpuXbarClockFrequency(166);
+#endif
 
 #ifdef HAVE_TTF
 #ifdef _WIN32

@@ -100,7 +100,7 @@ void Z_Init(void)
 	head.next = head.prev = &head;
 
 	memfree = I_GetFreeMem(&total)>>20;
-	CONS_Printf("System memory: %sMB - Free: %sMB\n", sizeu1(total>>20), sizeu2(memfree));
+	CONS_Printf("System memory: %dMB - Free: %dMB\n", total>>20, memfree);
 
 	// Note: This allocates memory. Watch out.
 	COM_AddCommand("memfree", Command_Memfree_f, COM_LUA);

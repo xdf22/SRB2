@@ -78,7 +78,7 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 #include "SDL_cpuinfo.h"
 #define HAVE_SDLCPUINFO
 
-#if defined (__unix__) || defined(__APPLE__) || (defined (UNIXCOMMON) && !defined (__HAIKU__))
+#if defined (__unix__) || defined(__APPLE__) || (defined (UNIXCOMMON) && !defined (__HAIKU__)) && !defined(__vita__)
 #if defined (__linux__)
 #include <sys/vfs.h>
 #else
@@ -145,7 +145,7 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 
 // Locations to directly check for srb2.pk3 in
 const char *wadDefaultPaths[] = {
-#if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)
+#if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON) && !defined(__vita__)
 	"/usr/local/share/games/SRB2",
 	"/usr/local/games/SRB2",
 	"/usr/share/games/SRB2",
@@ -154,7 +154,6 @@ const char *wadDefaultPaths[] = {
 	"c:\\games\\srb2",
 	"\\games\\srb2",
 #endif
-	NULL
 };
 
 // Folders to recurse through looking for srb2.pk3
@@ -2605,7 +2604,7 @@ static void Shittylogcopy(void)
 	char buf[8192];
 	FILE *fp;
 	size_t r;
-	if (fseek(logstream, 0, SEEK_SET) == -1)
+	/*if (fseek(logstream, 0, SEEK_SET) == -1)
 	{
 		Shittycopyerror("fseek");
 	}
@@ -2628,7 +2627,7 @@ static void Shittylogcopy(void)
 	else
 	{
 		Shittycopyerror(logfilename);
-	}
+	}*/
 }
 #endif/*!(defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON))*/
 
@@ -2668,7 +2667,7 @@ void I_ShutdownSystem(void)
 void I_GetDiskFreeSpace(INT64 *freespace)
 {
 #if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)
-#if defined (SOLARIS) || defined (__HAIKU__)
+#if defined (SOLARIS) || defined (__HAIKU__) || defined(__vita__)
 	*freespace = INT32_MAX;
 	return;
 #else // Both Linux and BSD have this, apparently.
@@ -2748,7 +2747,7 @@ char *I_GetUserName(void)
 INT32 I_mkdir(const char *dirname, INT32 unixright)
 {
 //[segabor]
-#if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON) || defined (__CYGWIN__)
+#if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON) || defined (__CYGWIN__) || defined(__vita__)
 	return mkdir(dirname, unixright);
 #elif defined (_WIN32)
 	UNREFERENCED_PARAMETER(unixright); /// \todo should implement ntright under nt...
@@ -2982,6 +2981,10 @@ static const char *locateWad(void)
 
 const char *I_LocateWad(void)
 {
+#ifdef __vita__
+	chdir("ux0:data/srb2vita");
+	return "ux0:data/srb2vita";
+#else
 	const char *waddir;
 
 	I_OutputMsg("Looking for WADs in: ");
@@ -2999,6 +3002,7 @@ const char *I_LocateWad(void)
 #endif
 	}
 	return waddir;
+#endif
 }
 
 #ifdef __linux__
@@ -3121,6 +3125,12 @@ size_t I_GetFreeMem(size_t *total)
 	if (total)
 		*total = totalKBytes << 10;
 	return freeKBytes << 10;
+
+#elif defined (__vita__)
+	// 512 MB
+	if (total)
+		*total = 512<<20;
+	return 512<<20;
 #else
 	// Guess 48 MB.
 	if (total)

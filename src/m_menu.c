@@ -3219,9 +3219,11 @@ boolean M_Responder(event_t *ev)
 			switch (ch)
 			{
 				case KEY_MOUSE1:
+#ifndef __vita__
 				case KEY_JOY1:
 					ch = KEY_ENTER;
 					break;
+#endif
 				case KEY_JOY1 + 3:
 					ch = 'n';
 					break;
@@ -3244,6 +3246,23 @@ boolean M_Responder(event_t *ev)
 				case KEY_HAT1 + 3:
 					ch = KEY_RIGHTARROW;
 					break;
+#if defined(__vita__)
+			case KEY_JOY1:
+				ch = KEY_ESCAPE;
+				break;
+			case KEY_JOY1 + 8:
+				ch = KEY_UPARROW;
+				break;
+			case KEY_JOY1 + 6:
+				ch = KEY_DOWNARROW;
+				break;
+			case KEY_JOY1 + 7:
+				ch = KEY_LEFTARROW;
+				break;
+			case KEY_JOY1 + 9:
+				ch = KEY_RIGHTARROW;
+				break;
+#endif
 			}
 		}
 		else if (ev->type == ev_joystick  && ev->key == 0 && joywait < I_GetTime())
