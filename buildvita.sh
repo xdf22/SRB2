@@ -19,7 +19,7 @@ echo "Creating Vita elf file"
 vita-elf-create ./build/bin/srb2_2.2.13-archive ./vitaout/srb2-vita-2.2.13.self
 
 echo "Creating eboot file"
-vita-make-fself -c -s ./vitaout/srb2-vita-2.2.13.self ./vitaout/eboot.bin
+vita-make-fself -c ./vitaout/srb2-vita-2.2.13.self ./vitaout/eboot.bin
 
 echo "Creating param.sfo file"
 vita-mksfoex -s TITLE_ID=SRB20000 -d MEMSIZE=2 "Sonic Robo Blast 2" ./vitaout/param.sfo
