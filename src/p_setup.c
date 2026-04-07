@@ -7894,6 +7894,9 @@ void P_UnloadLevel(void)
 	// Free GPU textures before freeing patches.
 	if (rendermode == render_opengl && (vid.glstate == VID_GL_LIBRARY_LOADED))
 		HWR_ClearAllTextures();
+
+	// Delete light table textures
+	HWR_ClearLightTables();
 #endif
 
 	R_InitializeLevelInterpolators();
