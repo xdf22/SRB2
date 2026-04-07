@@ -79,6 +79,8 @@ static menutype_t get_menutype(const char *word);
 static powertype_t get_power(const char *word);
 #endif
 
+char savegamename[256];
+
 boolean deh_loaded = false;
 static int dbg_line;
 

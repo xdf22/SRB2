@@ -167,6 +167,10 @@ consvar_t cv_modfilter = {"modfilter", "0", CV_SAVE|CV_CALL, interpolationfilter
 static channel_t *channels = NULL;
 static INT32 numofchannels = 0;
 
+UINT32 music_stack_fadein;
+UINT32 music_stack_fadeout;
+UINT32 music_stack_noposition;
+
 caption_t closedcaptions[NUMCAPTIONS];
 
 void S_ResetCaptions(void)

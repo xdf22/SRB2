@@ -398,9 +398,9 @@ enum {
 
 // Name of local directory for config files and savegames
 #if (((defined (__unix__) && !defined (MSDOS)) || defined (UNIXCOMMON)) && !defined (__CYGWIN__)) && !defined (__APPLE__)
-#define DEFAULTDIR ".srb2"
+#define DEFAULTDIR ".srb2_22"
 #else
-#define DEFAULTDIR "srb2"
+#define DEFAULTDIR "srb2_22"
 #endif
 
 #include "g_state.h"
@@ -445,7 +445,7 @@ void CONS_Debug(INT32 debugflags, const char *fmt, ...) FUNCDEBUG;
 
 // Things that used to be in dstrings.h
 #define SAVEGAMENAME "srb2sav"
-char savegamename[256];
+extern char savegamename[256];
 
 // m_misc.h
 #ifdef GETTEXT
@@ -631,5 +631,8 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 #ifndef HAVE_PNG
 #define NO_PNG_LUMPS
 #endif
+
+// xdf: heheh
+#define GLBADSHADOWS
 
 #endif // __DOOMDEF__

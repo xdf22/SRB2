@@ -310,6 +310,9 @@ static void M_ChangeControl(INT32 choice);
 menu_t OP_VideoOptionsDef, OP_VideoModeDef, OP_ColorOptionsDef;
 #ifdef HWRENDER
 menu_t OP_OpenGLOptionsDef, OP_OpenGLFogDef, OP_OpenGLColorDef;
+#ifdef ALAM_LIGHTING
+menu_t OP_OpenGLLightingDef;
+#endif
 #endif
 menu_t OP_SoundOptionsDef;
 menu_t OP_SoundAdvancedDef;
