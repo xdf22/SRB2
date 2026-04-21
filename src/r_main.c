@@ -950,6 +950,13 @@ static void R_SetFov(fixed_t playerfov)
 	if (splitscreen == 1) // Splitscreen FOV should be adjusted to maintain expected vertical view
 		fovtan = 17*fovtan/10;
 
+	if (cv_adjustfov.value)
+	{
+		fixed_t resmul = FixedDiv(vid.width * FRACUNIT, vid.height * FRACUNIT);
+		if (resmul > FRACUNIT)
+			fovtan = FixedMul(fovtan, (7*resmul/10));
+	}
+
 	// this is only used for planes rendering in software mode
 	INT32 j = viewheight*16;
 	for (INT32 i = 0; i < j; i++)

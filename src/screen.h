@@ -159,6 +159,7 @@ extern INT32 scr_bpp;
 
 extern consvar_t cv_scr_width, cv_scr_height, cv_scr_width_w, cv_scr_height_w, cv_scr_depth, cv_fullscreen;
 extern consvar_t cv_renderer;
+extern consvar_t cv_adjustfov;
 // wait for page flipping to end or not
 extern consvar_t cv_vidwait;
 extern consvar_t cv_timescale;

@@ -653,6 +653,16 @@ static void Impl_HandleWindowEvent(SDL_WindowEvent evt)
 
 	switch (evt.event)
 	{
+		case SDL_WINDOWEVENT_RESIZED:
+		case SDL_WINDOWEVENT_SIZE_CHANGED:
+		{
+			vid.width = cv_scr_width.value = evt.data1;
+			vid.height = cv_scr_height.value = evt.data2;
+			SCR_Recalc();
+			SCR_SetDrawFuncs();
+			VID_CheckRenderer();
+		}
+		break;
 		case SDL_WINDOWEVENT_ENTER:
 			mousefocus = SDL_TRUE;
 			break;
@@ -1677,7 +1687,7 @@ static SDL_bool Impl_CreateWindow(SDL_bool fullscreen)
 
 	// Create a window
 	window = SDL_CreateWindow("SRB2 "VERSIONSTRING, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-			realwidth, realheight, flags);
+			realwidth, realheight, flags | SDL_WINDOW_RESIZABLE);
 
 
 	if (window == NULL)
