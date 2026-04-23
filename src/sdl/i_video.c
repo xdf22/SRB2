@@ -77,6 +77,7 @@
 #include "../i_video.h"
 #include "../console.h"
 #include "../command.h"
+#include "../r_draw.h"
 #include "../r_main.h"
 #include "../lua_script.h"
 #include "../lua_libs.h"
@@ -656,13 +657,17 @@ static void Impl_HandleWindowEvent(SDL_WindowEvent evt)
 		case SDL_WINDOWEVENT_RESIZED:
 		case SDL_WINDOWEVENT_SIZE_CHANGED:
 		{
+			if (evt.data1 <= 320) { evt.data1 = 320; }
+			if (evt.data2 <= 200) { evt.data2 = 200; }
 			vid.width = cv_scr_width.value = evt.data1;
 			vid.height = cv_scr_height.value = evt.data2;
-			SCR_Recalc();
-			SCR_SetDrawFuncs();
 			VID_CheckRenderer();
+			SCR_Recalc();
+			R_SetViewSize();
+			R_ExecuteSetViewSize();
+			SCR_SetDrawFuncs();
+			break;
 		}
-		break;
 		case SDL_WINDOWEVENT_ENTER:
 			mousefocus = SDL_TRUE;
 			break;
