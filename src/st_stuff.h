@@ -29,6 +29,8 @@ void ST_Ticker(boolean run);
 // Called by main loop.
 void ST_Drawer(void);
 
+void ST_GIFDrawer(void);
+
 // Called when the console player is spawned on each level.
 void ST_Start(void);
 

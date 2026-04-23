@@ -653,6 +653,8 @@ static void D_Display(void)
 	else
 		wipetypepost = -1;
 
+	//should be safe to draw this here...
+	ST_GIFDrawer();
 	NetUpdate(); // send out any new accumulation
 
 	// It's safe to end the game now.
