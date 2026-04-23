@@ -2368,7 +2368,7 @@ else if (strlen(name) <= 6) \
 else \
 	arr[0] = 0;
 
-static void F_CacheTitleScreen(void)
+void F_CacheTitleScreen(void)
 {
 	switch(curttmode)
 	{
@@ -2640,6 +2640,17 @@ static void F_FigureActiveTtScale(void)
 
 	if(activettscale > 0)
 		F_LoadAlacroixGraphics(activettscale);
+}
+
+void F_ReloadTitleScreenGraphics(void)
+{
+	if (curttmode == TTMODE_ALACROIX)
+	{
+		activettscale = 0;
+		F_FigureActiveTtScale();
+	}
+	else
+		F_CacheTitleScreen();
 }
 
 // (no longer) De-Demo'd Title Screen
