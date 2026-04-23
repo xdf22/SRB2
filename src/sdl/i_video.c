@@ -997,6 +997,11 @@ void I_GetEvent(void)
 			case SDL_WINDOWEVENT:
 				Impl_HandleWindowEvent(evt.window);
 				break;
+ 			case SDL_DROPFILE:
+				char *file = evt.drop.file;
+				COM_BufInsertText(va("addfile %s\n", file));
+				SDL_free(file);
+				break;
 			case SDL_KEYUP:
 			case SDL_KEYDOWN:
 				Impl_HandleKeyboardEvent(evt.key, evt.type);
