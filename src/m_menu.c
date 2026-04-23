@@ -393,6 +393,7 @@ static void M_DrawColorRamp(INT32 x, INT32 y, INT32 w, INT32 h, skincolor_t colo
 static boolean M_ExitPandorasBox(void);
 static boolean M_QuitMultiPlayerMenu(void);
 static void M_HandleAddons(INT32 choice);
+static void M_HandleAddonsTooltips(void);
 static void M_HandleLevelPlatter(INT32 choice);
 static void M_HandleSoundTest(INT32 choice);
 static void M_HandleImageDef(INT32 choice);
@@ -6471,6 +6472,8 @@ static void M_DrawAddons(void)
 	const UINT8 *flashcol = NULL;
 	UINT8 hilicol;
 
+	M_HandleAddonsTooltips(); // tooltips
+
 	// hack - need to refresh at end of frame to handle addfile...
 	if (refreshdirmenu & M_AddonsRefresh())
 	{
@@ -6861,6 +6864,47 @@ static void M_HandleAddons(INT32 choice)
 		else
 			M_ClearMenus(true);
 	}
+}
+
+static void M_HandleAddonsTooltips(void)
+{
+	// tooltips in the addons menu
+	#define type (UINT8)(dirmenu[dir_on[menudepthleft]][DIR_TYPE])
+
+	switch (type & ~EXT_LOADED)
+	{
+		case EXT_SOC:
+		case EXT_TXT:
+		case EXT_CFG:
+		{
+			V_DrawThinString(10, BASEVIDHEIGHT-5, V_YELLOWMAP, "ENTER: Execute,");
+			V_DrawThinString(85, BASEVIDHEIGHT-5, V_YELLOWMAP, "RSHIFT: Unload All Addons");
+			break;
+		}
+		case EXT_WAD:
+		case EXT_LUA:
+		case EXT_PK3:
+		{
+			V_DrawThinString(10, BASEVIDHEIGHT-5, V_YELLOWMAP, "ENTER: Load Addon,");
+			V_DrawThinString(95, BASEVIDHEIGHT-5, V_YELLOWMAP, "LSHIFT: Unload Addon,");
+			V_DrawThinString(195, BASEVIDHEIGHT-5, V_YELLOWMAP, "RSHIFT: Unload All Addons");
+			break;
+		}
+		case EXT_FOLDER:
+		{
+			V_DrawThinString(10, BASEVIDHEIGHT-5, V_YELLOWMAP, "ENTER: Enter directory,");
+			V_DrawThinString(120, BASEVIDHEIGHT-5, V_YELLOWMAP, "RSHIFT: Unload All Addons");
+			break;
+		}
+		case EXT_UP:
+		{
+			V_DrawThinString(10, BASEVIDHEIGHT-5, V_YELLOWMAP, "ENTER: Go up,");
+			V_DrawThinString(70, BASEVIDHEIGHT-5, V_YELLOWMAP, "RSHIFT: Unload All Addons");
+			break;
+		}
+	}
+
+	#undef type
 }
 
 static void M_PandorasBox(INT32 choice)
