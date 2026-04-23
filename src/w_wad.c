@@ -74,6 +74,7 @@
 #include "p_setup.h" // P_ScanThings
 #endif
 #include "m_misc.h" // M_MapNumber
+#include "m_random.h" // for BwehHehHe
 #include "g_game.h" // G_SetGameModified
 
 #ifdef HWRENDER
@@ -1336,6 +1337,7 @@ void W_UnloadAddons(boolean remove_all_addons)
 				continue;
 			}
 
+			BwehHehHe(); // thought this was funny lol
 			W_UnloadFile(wadfiles[i]);
 			wadfiles[i] = NULL;
 		}

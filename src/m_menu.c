@@ -6798,6 +6798,50 @@ static void M_HandleAddons(INT32 choice)
 			}
 			break;
 
+		case KEY_LSHIFT:
+			{
+				boolean refresh = true;
+
+				#define type (UINT8)(dirmenu[dir_on[menudepthleft]][DIR_TYPE])
+				if (type & EXT_LOADED)
+					COM_BufAddText(va("delfile \"%s%s\"", menupath, dirmenu[dir_on[menudepthleft]]+DIR_STRING));
+
+				switch (type & ~EXT_LOADED)
+				{
+					case EXT_UP:
+					case EXT_FOLDER:
+						S_StartSound(NULL, sfx_lose);
+						break;
+					case EXT_TXT:
+					case EXT_CFG:
+						M_StartMessage(va("%c%s\x80\nCannot DELFILE a console-script \n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),NULL,MM_NOTHING);
+						break;
+					default:
+						S_StartSound(NULL, sfx_lose);
+				}
+				if (refresh)
+					refreshdirmenu |= REFRESHDIR_NORMAL;
+
+				#undef type
+			}
+			break;
+
+		case KEY_RSHIFT:
+			{
+				boolean refresh = true;
+				if (Playing()) 
+				{
+					S_StartSound(NULL, sfx_lose);
+					break;
+				}
+
+				S_StartSound(NULL, sfx_skid);
+				M_StartMessage(va("%s\x80\nAre you sure you want to unload ALL addons? \n\n(Press 'Y' to confirm)\n", "\x85WARNING!\x80"),W_UnloadAddons,MM_YESNO);
+				if (refresh)
+					refreshdirmenu |= REFRESHDIR_NORMAL;
+			}
+			break;
+
 		case KEY_ESCAPE:
 			exitmenu = true;
 			break;
