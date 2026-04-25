@@ -762,10 +762,7 @@ void D_SRB2Loop(void)
 
 	if (gamestate != GS_TITLESCREEN)
 	{
-		lumpnum_t gstartuplumpnum = W_CheckNumForPatchName("STARTUP");
-		if (gstartuplumpnum == LUMPERROR)
-			gstartuplumpnum = W_GetNumForPatchName("MISSING");
-		V_DrawScaledPatch(0, 0, 0, W_CachePatchNum(gstartuplumpnum, PU_PATCH));
+		V_DrawScaledPatch(0, 0, 0, W_CachePatchNum(W_GetNumForName("CONSBACK"), PU_PATCH));
 	}
 #ifdef __EMSCRIPTEN__
 	emscripten_set_main_loop(D_RunFrame, 0, 1);
