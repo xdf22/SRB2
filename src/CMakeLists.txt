@@ -169,15 +169,15 @@ endif()
 
 # TO-DO: make this check for the dependency like the others..
 if(${SRB2_CONFIG_HAVE_DISCORDRPC})
+	find_package(DiscordRPC)
 	add_definitions(-DHAVE_DISCORDRPC)
 	set(SRB2_DISCORDRPC_SOURCES
 		discord.c
 		discord.h
 	)
 
-	prepend_sources(SRB2_DISCORDRPC_SOURCES)
-
-	source_group("Discord RPC" FILES ${SRB2_DISCORDRPC_SOURCES})
+	target_sources(SRB2SDL2 PRIVATE ${SRB2_DISCORDRPC_SOURCES})
+	target_link_libraries(SRB2SDL2 PRIVATE discord-rpc)
 endif()
 
 if("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")

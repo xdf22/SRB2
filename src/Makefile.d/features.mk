@@ -41,6 +41,12 @@ $(eval $(call Configure,CURL,$(CURLCONFIG)))
 opts+=-DHAVE_CURL
 endif
 
+ifdef HAVE_DISCORDRPC
+LIBS+=-ldiscord-rpc
+CFLAGS+=-DHAVE_DISCORDRPC
+OBJS+=$(OBJDIR)/discord.o
+endif
+
 ifndef NOUPNP
 MINIUPNPC_PKGCONFIG?=miniupnpc
 $(eval $(call Use_pkg_config,MINIUPNPC))

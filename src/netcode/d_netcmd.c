@@ -60,7 +60,7 @@
 #endif
 
 #ifdef HAVE_DISCORDRPC
-#include "discord.h"
+#include "../discord.h"
 #endif
 
 // ------

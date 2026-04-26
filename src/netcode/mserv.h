@@ -102,4 +102,6 @@ void HMS_list_servers (void);
 msg_server_t * HMS_fetch_servers (msg_server_t *list, int room, int id);
 int  HMS_compare_mod_version (char *buffer, size_t size_of_buffer);
 
+extern INT16 ms_RoomId;
+
 #endif
