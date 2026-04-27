@@ -44,8 +44,28 @@ consvar_t cv_fpscap = CVAR_INIT ("fpscap", "Match refresh rate", CV_SAVE, fpscap
 ps_metric_t ps_interp_frac = {0};
 ps_metric_t ps_interp_lag = {0};
 
+boolean vidwaited;
+
 UINT32 R_GetFramerateCap(void)
 {
+	if (window_notinfocus) // lower fps when focus lost
+	{
+		if (!vidwaited)
+		{
+			CV_SetValue(&cv_vidwait, 0);
+			vidwaited = true;
+		}
+		return 5;
+	}
+	else
+	{
+		if (vidwaited)
+		{
+			CV_SetValue(&cv_vidwait, 1);
+			vidwaited = false;
+		}
+	}
+
 	if (rendermode == render_none)
 	{
 		// If we're not rendering (dedicated server),
