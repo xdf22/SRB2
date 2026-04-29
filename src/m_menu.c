@@ -28,6 +28,7 @@
 #include "g_game.h"
 #include "g_input.h"
 #include "m_argv.h"
+#include "m_easing.h"
 
 // Data.
 #include "sounds.h"
@@ -4354,9 +4355,13 @@ static void M_DrawMenuTitle(void)
 	}
 }
 
+// smooth cursor movement
+static fixed_t cursor_y = 0;
+static fixed_t cursor_target_y = 0;
+
 static void M_DrawGenericMenu(void)
 {
-	INT32 x, y, i, cursory = 0;
+	INT32 x, y, i = 0;
 
 	// DRAW MENU
 	x = currentMenu->x;
@@ -4368,7 +4373,7 @@ static void M_DrawGenericMenu(void)
 	for (i = 0; i < currentMenu->numitems; i++)
 	{
 		if (i == itemOn)
-			cursory = y;
+			cursor_target_y = y << FRACBITS;
 		switch (currentMenu->menuitems[i].status & IT_DISPLAY)
 		{
 			case IT_PATCH:
@@ -4400,7 +4405,7 @@ static void M_DrawGenericMenu(void)
 				if (currentMenu->menuitems[i].alphaKey)
 					y = currentMenu->y+currentMenu->menuitems[i].alphaKey;
 				if (i == itemOn)
-					cursory = y;
+					cursor_target_y = y << FRACBITS;
 
 				if ((currentMenu->menuitems[i].status & IT_DISPLAY)==IT_STRING)
 					V_DrawString(x, y, 0, currentMenu->menuitems[i].text);
@@ -4481,6 +4486,11 @@ static void M_DrawGenericMenu(void)
 		}
 	}
 
+	// cursor easing
+	fixed_t speed = FRACUNIT / 3;
+	cursor_y = Easing_Linear(speed, cursor_y, cursor_target_y);
+	INT32 cursory = cursor_y >> FRACBITS;
+
 	// DRAW THE SKULL CURSOR
 	if (((currentMenu->menuitems[itemOn].status & IT_DISPLAY) == IT_PATCH)
 		|| ((currentMenu->menuitems[itemOn].status & IT_DISPLAY) == IT_NOTHING))
@@ -4492,7 +4502,7 @@ static void M_DrawGenericMenu(void)
 	{
 		V_DrawScaledPatch(currentMenu->x - 24, cursory, 0,
 			W_CachePatchName("M_CURSOR", PU_PATCH));
-		V_DrawString(currentMenu->x, cursory, V_YELLOWMAP, currentMenu->menuitems[itemOn].text);
+		V_DrawString(currentMenu->x, cursor_target_y >> FRACBITS, V_YELLOWMAP, currentMenu->menuitems[itemOn].text);
 	}
 }
 
@@ -4594,10 +4604,12 @@ static void M_DrawControlsDefMenu(void)
 
 #define scrollareaheight 72
 
+static fixed_t scroll_y = SMALLLINEHEIGHT;
+
 // note that alphakey is multiplied by 2 for scrolling menus to allow greater usage in UINT8 range.
 static void M_DrawGenericScrollMenu(void)
 {
-	INT32 x, y, i, max, bottom, tempcentery, cursory = 0;
+	INT32 x, y, i, max, bottom, tempcentery = 0;
 
 	// DRAW MENU
 	x = currentMenu->x;
@@ -4612,6 +4624,11 @@ static void M_DrawGenericScrollMenu(void)
 	else
 		tempcentery = currentMenu->y - currentMenu->menuitems[itemOn].alphaKey*2 + scrollareaheight;
 
+	// text easing
+	fixed_t target_scroll = (tempcentery << FRACBITS)+SMALLLINEHEIGHT; // todo: fix the first menuitem
+	scroll_y = Easing_Linear(FRACUNIT / 3, scroll_y, target_scroll);
+	tempcentery = scroll_y >> FRACBITS;
+		
 	for (i = 0; i < currentMenu->numitems; i++)
 	{
 		if (currentMenu->menuitems[i].status != IT_DISABLED && currentMenu->menuitems[i].alphaKey*2 + tempcentery >= currentMenu->y)
@@ -4641,8 +4658,8 @@ static void M_DrawGenericScrollMenu(void)
 	for (; i < max; i++)
 	{
 		y = currentMenu->menuitems[i].alphaKey*2 + tempcentery;
-		if (i == itemOn)
-			cursory = y;
+			if (i == itemOn)
+				cursor_target_y = y << FRACBITS;
 		switch (currentMenu->menuitems[i].status & IT_DISPLAY)
 		{
 			case IT_PATCH:
@@ -4735,6 +4752,12 @@ static void M_DrawGenericScrollMenu(void)
 				break;
 		}
 	}
+
+
+	// cursor easing
+	fixed_t speed = FRACUNIT / 3;
+	cursor_y = Easing_Linear(speed, cursor_y, cursor_target_y);
+	INT32 cursory = cursor_y >> FRACBITS;
 
 	// DRAW THE SKULL CURSOR
 	V_DrawScaledPatch(currentMenu->x - 24, cursory, 0,
@@ -4889,7 +4912,7 @@ static void M_DrawPauseMenu(void)
 
 static void M_DrawCenteredMenu(void)
 {
-	INT32 x, y, i, cursory = 0;
+	INT32 x, y, i = 0;
 
 	// DRAW MENU
 	x = currentMenu->x;
@@ -4900,8 +4923,8 @@ static void M_DrawCenteredMenu(void)
 
 	for (i = 0; i < currentMenu->numitems; i++)
 	{
-		if (i == itemOn)
-			cursory = y;
+			if (i == itemOn)
+				cursor_target_y = y << FRACBITS;
 		switch (currentMenu->menuitems[i].status & IT_DISPLAY)
 		{
 			case IT_PATCH:
@@ -4933,7 +4956,7 @@ static void M_DrawCenteredMenu(void)
 				if (currentMenu->menuitems[i].alphaKey)
 					y = currentMenu->y+currentMenu->menuitems[i].alphaKey;
 				if (i == itemOn)
-					cursory = y;
+					cursor_target_y = y << FRACBITS;
 
 				if ((currentMenu->menuitems[i].status & IT_DISPLAY)==IT_STRING)
 					V_DrawCenteredString(x, y, 0, currentMenu->menuitems[i].text);
@@ -4997,6 +5020,12 @@ static void M_DrawCenteredMenu(void)
 		}
 	}
 
+
+	// cursor easing
+	fixed_t speed = FRACUNIT / 3;
+	cursor_y = Easing_Linear(speed, cursor_y, cursor_target_y);
+	INT32 cursory = cursor_y >> FRACBITS;
+
 	// DRAW THE SKULL CURSOR
 	if (((currentMenu->menuitems[itemOn].status & IT_DISPLAY) == IT_PATCH)
 		|| ((currentMenu->menuitems[itemOn].status & IT_DISPLAY) == IT_NOTHING))
@@ -5008,7 +5037,7 @@ static void M_DrawCenteredMenu(void)
 	{
 		V_DrawScaledPatch(x - V_StringWidth(currentMenu->menuitems[itemOn].text, 0)/2 - 24, cursory, 0,
 			W_CachePatchName("M_CURSOR", PU_PATCH));
-		V_DrawCenteredString(x, cursory, V_YELLOWMAP, currentMenu->menuitems[itemOn].text);
+		V_DrawCenteredString(x, cursor_target_y >> FRACBITS, V_YELLOWMAP, currentMenu->menuitems[itemOn].text);
 	}
 }
 
@@ -9927,7 +9956,7 @@ static void M_HandleLevelStats(INT32 choice)
 void M_DrawTimeAttackMenu(void)
 {
 	gamedata_t *data = clientGamedata;
-	INT32 i, x, y, empatx, empaty, cursory = 0;
+	INT32 i, x, y, empatx, empaty = 0;
 	UINT16 dispstatus;
 	patch_t *PictureOfUrFace;
 	patch_t *empatch;
@@ -9966,7 +9995,7 @@ void M_DrawTimeAttackMenu(void)
 
 		y = currentMenu->y+currentMenu->menuitems[i].alphaKey;
 		if (i == itemOn)
-			cursory = y;
+			cursor_target_y = y << FRACBITS;
 
 		V_DrawString(x, y, (dispstatus == IT_WHITESTRING) ? V_YELLOWMAP : 0 , currentMenu->menuitems[i].text);
 
@@ -9992,9 +10021,15 @@ void M_DrawTimeAttackMenu(void)
 		}
 	}
 
+
+	// cursor easing
+	fixed_t speed = FRACUNIT / 3;
+	cursor_y = Easing_Linear(speed, cursor_y, cursor_target_y);
+	INT32 cursory = cursor_y >> FRACBITS;
+
 	// DRAW THE SKULL CURSOR
 	V_DrawScaledPatch(currentMenu->x - 24, cursory, 0, W_CachePatchName("M_CURSOR", PU_PATCH));
-	V_DrawString(currentMenu->x, cursory, V_YELLOWMAP, currentMenu->menuitems[itemOn].text);
+	V_DrawString(currentMenu->x, cursor_target_y >> FRACBITS, V_YELLOWMAP, currentMenu->menuitems[itemOn].text);
 
 	// Character face!
 	{
@@ -10221,7 +10256,7 @@ static void M_TimeAttack(INT32 choice)
 void M_DrawNightsAttackMenu(void)
 {
 	gamedata_t *data = clientGamedata;
-	INT32 i, x, y, cursory = 0;
+	INT32 i, x, y = 0;
 	UINT16 dispstatus;
 
 	M_SetMenuCurBackground("NTSATKBG");
@@ -10247,7 +10282,7 @@ void M_DrawNightsAttackMenu(void)
 
 		y = currentMenu->y+currentMenu->menuitems[i].alphaKey;
 		if (i == itemOn)
-			cursory = y;
+			cursor_target_y = y << FRACBITS;
 
 		V_DrawString(x, y, (dispstatus == IT_WHITESTRING) ? V_YELLOWMAP : 0 , currentMenu->menuitems[i].text);
 
@@ -10273,9 +10308,15 @@ void M_DrawNightsAttackMenu(void)
 		}
 	}
 
+
+	// cursor easing
+	fixed_t speed = FRACUNIT / 3;
+	cursor_y = Easing_Linear(speed, cursor_y, cursor_target_y);
+	INT32 cursory = cursor_y >> FRACBITS;
+
 	// DRAW THE SKULL CURSOR
 	V_DrawScaledPatch(currentMenu->x - 24, cursory, 0, W_CachePatchName("M_CURSOR", PU_PATCH));
-	V_DrawString(currentMenu->x, cursory, V_YELLOWMAP, currentMenu->menuitems[itemOn].text);
+	V_DrawString(currentMenu->x, cursor_target_y >> FRACBITS, V_YELLOWMAP, currentMenu->menuitems[itemOn].text);
 
 	// Level record list
 	if (cv_nextmap.value)
@@ -10917,7 +10958,7 @@ static void M_StartMarathon(INT32 choice)
 // Drawing function for Marathon menu
 void M_DrawMarathon(void)
 {
-	INT32 i, x, y, cursory = 0, cnt, soffset = 0, w;
+	INT32 i, x, y = 0, cnt, soffset = 0, w;
 	UINT16 dispstatus;
 	consvar_t *cv;
 	const char *cvstring;
@@ -10973,16 +11014,16 @@ void M_DrawMarathon(void)
 		i = 0;
 		w = (((8-cnt)+1)/3)+1;
 		w *= w;
-		cursory = 0;
+		cursor_target_y = 0;
 		while (i < cnt)
 		{
 			i++;
 			col = 158+((cnt-i)/3);
 			if (col >= 160)
 				col = 253;
-			V_DrawFill(((BASEVIDWIDTH-190)/2)-cursory-w, -diffy, w, yspan, col);
-			V_DrawFill(((BASEVIDWIDTH+190)/2)+cursory,   -diffy, w, yspan, col);
-			cursory += w;
+			V_DrawFill(((BASEVIDWIDTH-190)/2)-cursor_target_y-w, -diffy, w, yspan, col);
+			V_DrawFill(((BASEVIDWIDTH+190)/2)+cursor_target_y,   -diffy, w, yspan, col);
+			cursor_target_y += w;
 			w *= 2;
 		}
 	}
@@ -11078,7 +11119,7 @@ void M_DrawMarathon(void)
 
 		y = currentMenu->y+currentMenu->menuitems[i].alphaKey;
 		if (i == itemOn)
-			cursory = y;
+			cursor_target_y = y << FRACBITS;
 
 		V_DrawString(x, y, (dispstatus == IT_WHITESTRING) ? V_YELLOWMAP : 0 , currentMenu->menuitems[i].text);
 
@@ -11138,9 +11179,15 @@ void M_DrawMarathon(void)
 		}
 	}
 
+
+	// cursor easing
+	fixed_t speed = FRACUNIT / 3;
+	cursor_y = Easing_Linear(speed, cursor_y, cursor_target_y);
+	INT32 cursory = cursor_y >> FRACBITS;
+
 	// DRAW THE SKULL CURSOR
 	V_DrawScaledPatch(currentMenu->x - 24, cursory, 0, W_CachePatchName("M_CURSOR", PU_PATCH));
-	V_DrawString(currentMenu->x, cursory, V_YELLOWMAP, currentMenu->menuitems[itemOn].text);
+	V_DrawString(currentMenu->x, cursor_target_y >> FRACBITS, V_YELLOWMAP, currentMenu->menuitems[itemOn].text);
 
 	// Draw press ESC to exit string on main record attack menu
 	V_DrawString(104-72, 180, V_TRANSLUCENT, M_GetText("Press ESC to exit"));
@@ -12335,7 +12382,7 @@ static void M_DrawPlayerSetupFollowItem(INT32 x, INT32 y, fixed_t scale, INT32 f
 
 static void M_DrawSetupMultiPlayerMenu(void)
 {
-	INT32 x, y, cursory = 0, flags = 0;
+	INT32 x, y = 0, flags = 0;
 	fixed_t scale;
 	spritedef_t *sprdef;
 	spriteframe_t *sprframe;
@@ -12353,7 +12400,7 @@ static void M_DrawSetupMultiPlayerMenu(void)
 
 	M_DrawLevelPlatterHeader(y - (lsheadingheight - 12), "Name", true, false);
 	if (itemOn == 0)
-		cursory = y;
+		cursor_target_y = y << FRACBITS;
 	y += 11;
 
 	// draw name string
@@ -12367,7 +12414,7 @@ static void M_DrawSetupMultiPlayerMenu(void)
 
 	M_DrawLevelPlatterHeader(y - (lsheadingheight - 12), "Character", true, false);
 	if (itemOn == 1)
-		cursory = y;
+		cursor_target_y = y << FRACBITS;
 
 	// draw skin string
 	V_DrawRightAlignedString(BASEVIDWIDTH - x, y,
@@ -12580,7 +12627,7 @@ colordraw:
 		// Draw horizontal arrows
 		if (itemOn == 2)
 		{
-			cursory = y;
+			cursor_target_y = y << FRACBITS;
 			if ((MP_PlayerSetupMenu[2].status & IT_TYPE) != IT_SPACE)
 			{
 				V_DrawCharacter(BASEVIDWIDTH - x - 10 - V_StringWidth(skincolors[setupm_fakecolor->color].name, V_ALLOWLOWERCASE) - (skullAnimCounter/5), y,
@@ -12631,7 +12678,13 @@ colordraw:
 		| ((itemOn == 3) ? V_YELLOWMAP : 0),
 		"Save as default");
 	if (itemOn == 3)
-		cursory = y;
+		cursor_target_y = y << FRACBITS;
+
+
+	// cursor easing
+	fixed_t speed = FRACUNIT / 3;
+	cursor_y = Easing_Linear(speed, cursor_y, cursor_target_y);
+	INT32 cursory = cursor_y >> FRACBITS;
 
 	V_DrawScaledPatch(x - 17, cursory, 0,
 		W_CachePatchName("M_CURSOR", PU_PATCH));
@@ -13501,7 +13554,7 @@ static void M_Setup2PControlsMenu(INT32 choice)
 static void M_DrawControl(void)
 {
 	char     tmp[50];
-	INT32    x, y, i, max, cursory = 0, iter;
+	INT32    x, y, i, max = 0, iter;
 	INT32    keys[2];
 
 	x = currentMenu->x;
@@ -13574,7 +13627,7 @@ static void M_DrawControl(void)
 			continue;
 
 		if (i == itemOn)
-			cursory = y;
+			cursor_target_y = y << FRACBITS;
 
 		if (currentMenu->menuitems[i].status == IT_CONTROL)
 		{
@@ -13609,6 +13662,12 @@ static void M_DrawControl(void)
 
 		y += SMALLLINEHEIGHT;
 	}
+
+
+	// cursor easing
+	fixed_t speed = FRACUNIT / 3;
+	cursor_y = Easing_Linear(speed, cursor_y, cursor_target_y);
+	INT32 cursory = cursor_y >> FRACBITS;
 
 	V_DrawScaledPatch(currentMenu->x - 20, cursory, 0,
 		W_CachePatchName("M_CURSOR", PU_PATCH));
@@ -14005,7 +14064,7 @@ static void M_DrawVideoMode(void)
 // Just M_DrawGenericScrollMenu but showing a backing behind the headers.
 static void M_DrawColorMenu(void)
 {
-	INT32 x, y, i, max, tempcentery, cursory = 0;
+	INT32 x, y, i, max, tempcentery = 0;
 
 	// DRAW MENU
 	x = currentMenu->x;
@@ -14027,6 +14086,13 @@ static void M_DrawColorMenu(void)
 		tempcentery = currentMenu->y - currentMenu->menuitems[currentMenu->numitems-1].alphaKey*2 + 2*scrollareaheight;
 	else
 		tempcentery = currentMenu->y - currentMenu->menuitems[itemOn].alphaKey*2 + scrollareaheight;
+
+	// text easing
+	fixed_t target_scroll = (tempcentery << FRACBITS)+SMALLLINEHEIGHT; // todo: fix the first menuitem
+
+	scroll_y = Easing_Linear(FRACUNIT / 3, scroll_y, target_scroll);
+
+	tempcentery = scroll_y >> FRACBITS;
 
 	for (i = 0; i < currentMenu->numitems; i++)
 	{
@@ -14052,7 +14118,7 @@ static void M_DrawColorMenu(void)
 	{
 		y = currentMenu->menuitems[i].alphaKey*2 + tempcentery;
 		if (i == itemOn)
-			cursory = y;
+			cursor_target_y = y << FRACBITS;
 		switch (currentMenu->menuitems[i].status & IT_DISPLAY)
 		{
 			case IT_PATCH:
@@ -14124,6 +14190,12 @@ static void M_DrawColorMenu(void)
 				break;
 		}
 	}
+
+
+	// cursor easing
+	fixed_t speed = FRACUNIT / 3;
+	cursor_y = Easing_Linear(speed, cursor_y, cursor_target_y);
+	INT32 cursory = cursor_y >> FRACBITS;
 
 	// DRAW THE SKULL CURSOR
 	V_DrawScaledPatch(currentMenu->x - 24, cursory, 0,
