@@ -147,6 +147,10 @@ void I_BeginRead(void);
 */
 void I_EndRead(void);
 
+/**	\brief Sets the resolution to a specific width and height value.
+*/
+void I_SetResolution(INT32 width, INT32 height);
+
 UINT32 I_GetRefreshRate(void);
 
 #endif

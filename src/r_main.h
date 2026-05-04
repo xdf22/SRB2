@@ -121,7 +121,7 @@ extern consvar_t cv_flipcam, cv_flipcam2;
 extern consvar_t cv_shadow;
 extern consvar_t cv_translucency;
 extern consvar_t cv_drawdist, cv_drawdist_nights, cv_drawdist_precip;
-extern consvar_t cv_fov, cv_fovchange;
+extern consvar_t cv_fov, cv_fovchange, cv_adjustfov;
 extern consvar_t cv_skybox;
 extern consvar_t cv_renderview;
 extern consvar_t cv_renderhitbox, cv_renderhitboxinterpolation, cv_renderhitboxgldepth;

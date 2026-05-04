@@ -64,12 +64,14 @@ INT32 setmodeneeded; //video mode change needed if > 0 (the mode number to set +
 UINT8 setrenderneeded = 0;
 
 static CV_PossibleValue_t scr_depth_cons_t[] = {{8, "8 bits"}, {16, "16 bits"}, {24, "24 bits"}, {32, "32 bits"}, {0, NULL}};
+static CV_PossibleValue_t scr_width_cons_t[] = {{BASEVIDWIDTH, "MIN"}, {MAXVIDWIDTH, "MAX"}, {0, NULL}};
+static CV_PossibleValue_t scr_height_cons_t[] = {{BASEVIDHEIGHT, "MIN"}, {MAXVIDHEIGHT, "MAX"}, {0, NULL}};
 
 //added : 03-02-98: default screen mode, as loaded/saved in config
-consvar_t cv_scr_width = CVAR_INIT ("scr_width", "1280", CV_SAVE, CV_Unsigned, NULL);
-consvar_t cv_scr_height = CVAR_INIT ("scr_height", "800", CV_SAVE, CV_Unsigned, NULL);
-consvar_t cv_scr_width_w = CVAR_INIT ("scr_width_w", "640", CV_SAVE, CV_Unsigned, NULL);
-consvar_t cv_scr_height_w = CVAR_INIT ("scr_height_w", "400", CV_SAVE, CV_Unsigned, NULL);
+consvar_t cv_scr_width = CVAR_INIT ("scr_width", "1280", CV_SAVE, scr_width_cons_t, NULL);
+consvar_t cv_scr_height = CVAR_INIT ("scr_height", "800", CV_SAVE, scr_height_cons_t, NULL);
+consvar_t cv_scr_width_w = CVAR_INIT ("scr_width_w", "640", CV_SAVE, scr_width_cons_t, NULL);
+consvar_t cv_scr_height_w = CVAR_INIT ("scr_height_w", "400", CV_SAVE, scr_height_cons_t, NULL);
 consvar_t cv_scr_depth = CVAR_INIT ("scr_depth", "16 bits", CV_SAVE, scr_depth_cons_t, NULL);
 
 CV_PossibleValue_t cv_renderer_t[] = {
@@ -79,8 +81,6 @@ CV_PossibleValue_t cv_renderer_t[] = {
 #endif
 	{0, NULL}
 };
-
-consvar_t cv_adjustfov = CVAR_INIT ("adjustfov", "On", CV_SAVE, CV_OnOff, NULL);
 
 consvar_t cv_renderer = CVAR_INIT ("renderer", "Software", CV_SAVE|CV_CALL, cv_renderer_t, SCR_ChangeRenderer);
 

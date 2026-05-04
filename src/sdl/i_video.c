@@ -152,6 +152,7 @@ SDL_Renderer *renderer;
 static SDL_Texture  *texture;
 static SDL_bool      havefocus = SDL_TRUE;
 static const char *fallback_resolution_name = "Fallback";
+static SDL_Rect src_rect = { 0, 0, 0, 0 };
 
 // windowed video modes from which to choose from.
 static INT32 windowedModes[MAXWINMODES][2] =
@@ -644,6 +645,16 @@ static INT32 SDLJoyAxis(const Sint16 axis, evtype_t which)
 	return raxis;
 }
 
+void I_SetResolution(INT32 width, INT32 height)
+{
+	src_rect.w = vid.width = width;
+	src_rect.h  = vid.height = height;
+	VID_CheckRenderer(); // i know this returns a boolean but it also does some of the required functions
+	SCR_Recalc();
+	R_SetViewSize();
+	R_ExecuteSetViewSize();
+}
+
 static void Impl_HandleWindowEvent(SDL_WindowEvent evt)
 {
 	static SDL_bool firsttimeonmouse = SDL_TRUE;
@@ -655,15 +666,7 @@ static void Impl_HandleWindowEvent(SDL_WindowEvent evt)
 		case SDL_WINDOWEVENT_RESIZED:
 		case SDL_WINDOWEVENT_SIZE_CHANGED:
 		{
-			if (evt.data1 <= 320) { evt.data1 = 320; }
-			if (evt.data2 <= 200) { evt.data2 = 200; }
-			vid.width = cv_scr_width.value = evt.data1;
-			vid.height = cv_scr_height.value = evt.data2;
-			VID_CheckRenderer();
-			SCR_Recalc();
-			R_SetViewSize();
-			R_ExecuteSetViewSize();
-			SCR_SetDrawFuncs();
+			I_SetResolution(evt.data1, evt.data2);
 			break;
 		}
 		case SDL_WINDOWEVENT_ENTER:
@@ -1304,8 +1307,6 @@ static inline boolean I_SkipFrame(void)
 //
 // I_FinishUpdate
 //
-static SDL_Rect src_rect = { 0, 0, 0, 0 };
-
 void I_FinishUpdate(void)
 {
 	if (rendermode == render_none)
@@ -1696,6 +1697,10 @@ static SDL_bool Impl_CreateWindow(SDL_bool fullscreen)
 	// Create a window
 	window = SDL_CreateWindow("SRB2 "VERSIONSTRING, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
 			realwidth, realheight, flags | SDL_WINDOW_RESIZABLE);
+
+	// Set minimum and maximum window size
+	SDL_SetWindowMinimumSize(window, 320, 200);
+	SDL_SetWindowMaximumSize(window, MAXVIDWIDTH, MAXVIDHEIGHT);
 
 
 	if (window == NULL)

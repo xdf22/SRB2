@@ -1353,12 +1353,32 @@ static menuitem_t OP_VideoOptionsMenu[] =
 #endif
 };
 
+static void M_ApplyResolution(void)
+{
+	// short function for setting the resolution to the cvars in the resolution menu, could be improved
+	if (cv_scr_width.value < BASEVIDWIDTH){ cv_scr_width.value = BASEVIDWIDTH; } // minimum of 320
+	if (cv_scr_height.value < BASEVIDHEIGHT){ cv_scr_height.value = BASEVIDHEIGHT; } // minimum of 200
+	if (cv_scr_width.value > MAXVIDWIDTH){ cv_scr_width.value = MAXVIDWIDTH; } // maximum of 1920
+	if (cv_scr_height.value > MAXVIDHEIGHT){ cv_scr_height.value = MAXVIDHEIGHT; } // maximum of 1200
+	S_StartSound(NULL, sfx_strpst);
+	I_SetResolution(cv_scr_width.value, cv_scr_height.value);
+}
+
 static menuitem_t OP_ResolutionMenu[] =
 {
-	{IT_WHITESTRING | IT_SPACE,          NULL, "Current Resolution",         NULL,                  10},
-	{IT_STRING | IT_CALL,                NULL, "Video Mode List...",         M_VideoModeMenu,       20},
+	{IT_HEADER,          				 NULL, "Video Modes",         		 NULL,                  0},
+	{IT_WHITESTRING | IT_SPACE,          NULL, "Current Resolution",         NULL,                  15},
+	{IT_STRING | IT_CALL,                NULL, "Video Mode List...",         M_VideoModeMenu,       25},
 
-	{IT_STRING | IT_CVAR,                NULL, "Adjust FOV With Resolution", &cv_adjustfov,         40}, // NOT WORKING!!
+	{IT_HEADER,          				 NULL, "Custom Resolution",          NULL,                  40},
+	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Width",         			 &cv_scr_width,       	55},
+	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Height",         			 &cv_scr_height,       	65},
+	{IT_STRING | IT_CALL,                NULL, "Apply Resolution",        	 M_ApplyResolution,     75},
+
+	{IT_HEADER,          				 NULL, "Misc",          			 NULL,                  90},
+	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Field Of View",	 			 &cv_fov,         		105},
+	{IT_STRING | IT_CVAR,                NULL, "Change FOV With Speed",	 	 &cv_fovchange,         115},
+	{IT_STRING | IT_CVAR,                NULL, "Adjust FOV With Resolution", &cv_adjustfov,         125},
 };
 
 static menuitem_t OP_VideoModeMenu[] =
