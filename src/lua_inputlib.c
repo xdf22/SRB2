@@ -122,7 +122,7 @@ static int lib_setMouseGrab(lua_State *L)
 
 static int lib_getCursorPosition(lua_State *L)
 {
-	int x, y;
+	INT32 x, y;
 	I_GetCursorPosition(&x, &y);
 	lua_pushinteger(L, x);
 	lua_pushinteger(L, y);

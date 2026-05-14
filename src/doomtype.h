@@ -93,7 +93,7 @@ typedef long ssize_t;
 	#define strncasecmp             strnicmp
 	#define strcasecmp              strcmpi
 #endif
-#if defined (__unix__) || defined (__APPLE__) || defined (UNIXCOMMON)
+#if defined (__unix__) || defined (__APPLE__) || defined (UNIXCOMMON) || defined (_NDS)
 	#undef stricmp
 	#define stricmp(x,y) strcasecmp(x,y)
 	#undef strnicmp
@@ -110,7 +110,7 @@ int startswith (const char *base, const char *tag);
 int endswith (const char *base, const char *tag);
 char *xstrtok(char *line, const char *delims);
 
-#if defined (_WIN32) || defined (__HAIKU__)
+#if defined (_WIN32) || defined (__HAIKU__) || defined (_NDS)
 #define HAVE_DOSSTR_FUNCS
 #endif
 
@@ -155,7 +155,9 @@ typedef int32_t boolean;
 #define boolean BOOL
 #endif
 
-#ifndef __cplusplus
+#ifdef _NDS
+#include <stdbool.h>
+#elif defined (__cplusplus)
 #ifndef _WIN32
 enum {false = 0, true = 1};
 #else

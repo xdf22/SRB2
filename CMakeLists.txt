@@ -92,12 +92,12 @@ endif()
 
 find_package(ZLIB REQUIRED)
 find_package(PNG REQUIRED)
-find_package(CURL REQUIRED)
-find_package(libopenmpt QUIET)
+#find_package(CURL REQUIRED)
+#find_package(libopenmpt QUIET)
 if("${SRB2_CONFIG_USE_GME}")
 	find_package(libgme QUIET)
 endif()
-find_package(miniupnpc QUIET)
+#find_package(miniupnpc QUIET)
 
 
 if(${PROJECT_SOURCE_DIR} MATCHES ${PROJECT_BINARY_DIR})
@@ -131,7 +131,7 @@ set(SRB2_SDL2_EXE_SUFFIX "" CACHE STRING "Optional executable suffix, separated 
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/src)
 
-add_subdirectory(src)
+add_subdirectory(src/nds)
 add_subdirectory(assets)
 
 
@@ -168,4 +168,4 @@ endif()
 list(APPEND EXE_NAME_PARTS ${SRB2_SDL2_EXE_SUFFIX})
 
 list(JOIN EXE_NAME_PARTS "_" EXE_NAME)
-set_target_properties(SRB2SDL2 PROPERTIES OUTPUT_NAME ${EXE_NAME})
+#set_target_properties(SRB2SDL2 PROPERTIES OUTPUT_NAME ${EXE_NAME})

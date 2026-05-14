@@ -159,6 +159,8 @@ typedef union
 
 #define IPV6_MULTICAST_ADDRESS "ff15::57e1:1a12"
 
+#ifndef _NDS
+
 // define socklen_t in DOS/Windows if it is not already defined
 #ifdef USE_WINSOCK1
 	typedef int socklen_t;
@@ -1376,3 +1378,10 @@ boolean Net_IsNodeIPv6(INT32 node)
 }
 
 #include "i_addrinfo.c"
+
+#else
+boolean I_InitTcpDriver(void) { return false; }
+boolean I_InitTcpNetwork(void) { return false; }
+void I_ShutdownTcpDriver(void) {}
+boolean Net_IsNodeIPv6(INT32 node) { return false; }
+#endif

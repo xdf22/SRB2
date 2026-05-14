@@ -1474,6 +1474,10 @@ void CONS_Printf(const char *fmt, ...)
 	vsprintf(txt, fmt, argptr);
 	va_end(argptr);
 
+#ifdef _NDS
+	printf(txt);
+#endif
+
 	// echo console prints to log file
 	DEBFILE(txt);
 
