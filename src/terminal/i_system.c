@@ -14,6 +14,8 @@
 #include <fcntl.h>
 #include <errno.h>
 
+#include <ncurses.h>
+
 FILE *logstream = NULL;
 
 UINT8 graphics_started = 0;
@@ -241,9 +243,75 @@ UINT64 I_GetPrecisePrecision(void)
     return 1000000;
 }
 
-void I_GetEvent(void) {}
+static boolean key_down[512];
+static int key_hold[512];
 
-void I_OsPolling(void) {}
+// i prefer using multiple short functions instead of one long one
+static int mapKey(int ch)
+{
+    switch (ch)
+    {
+        case 'w': return 'w';
+        case 'a': return 'a';
+        case 's': return 's';
+        case 'd': return 'd';
+
+        case KEY_UP:    return KEY_UPARROW;
+        case KEY_DOWN:  return KEY_DOWNARROW;
+        case KEY_LEFT:  return KEY_LEFTARROW;
+        case KEY_RIGHT: return KEY_RIGHTARROW;
+
+        case 10:
+        case 13:
+        case KEY_ENTER: return KEY_ENTER;
+
+        case ' ': return KEY_SPACE;
+        case 27:  return KEY_ESCAPE;
+    }
+    return 0;
+}
+
+void I_GetEvent(void)
+{
+    int ch;
+
+    while ((ch = getch()) != ERR)
+    {
+        int key = mapKey(ch);
+        if (!key) continue;
+
+        key_hold[key] = 15;
+
+        event_t ev;
+        ev.type = ev_keydown;
+        ev.repeated = false;
+        ev.key = key;
+        D_PostEvent(&ev);
+    }
+}
+
+void I_OsPolling(void)
+{
+    I_GetEvent();
+
+    for (int i = 0; i < 512; i++)
+    {
+        if (key_hold[i] > 0)
+        {
+            key_hold[i]--;
+        }
+        else if (key_hold[i] == 0)
+        {
+            key_hold[i] = -1;
+
+            event_t ev;
+            ev.type = ev_keyup;
+            ev.repeated = false;
+            ev.key = i;
+            D_PostEvent(&ev);
+        }
+    }
+}
 
 /**	\brief empty ticcmd for player 1
 */

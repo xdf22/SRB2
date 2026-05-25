@@ -6,6 +6,9 @@
 #include "../i_system.h"
 #include "../i_video.h"
 
+#include <ncurses.h>
+#include <panel.h>
+
 rendermode_t rendermode = render_soft;
 rendermode_t chosenrendermode = render_soft;
 
@@ -14,29 +17,49 @@ boolean allow_fullscreen = false;
 consvar_t cv_vidwait = CVAR_INIT ("vid_wait", "On", CV_SAVE, CV_OnOff, NULL);
 
 static RGBA_t term_palette[256];
+static short real_palette[256];
 
 void I_StartupGraphics(void)
 {
-	CV_RegisterVar (&cv_vidwait);
-	printf("\x1b[?1049h");
-	printf("\x1b[?25l");
-	printf("\x1b[H");
-	fflush(stdout);
+    initscr();
+
+    start_color();
+    use_default_colors();
+
+	cbreak();
+	noecho();
+	nodelay(stdscr, TRUE);
+	keypad(stdscr, TRUE);
+
 	VID_SetMode(1);
-	graphics_started = true;
+    graphics_started = true;
 }
 
 void I_ShutdownGraphics(void)
 {
 	printf("\x1b[?25h");
 	printf("\x1b[0m");
+	endwin();
 }
 
 void VID_StartupOpenGL(void){}
 
 void I_SetPalette(RGBA_t *palette)
 {
-	memcpy(term_palette, palette, sizeof(term_palette));
+    memcpy(term_palette, palette, sizeof(term_palette));
+
+	for (int i = 0; i < 256; i++)
+	{
+		// normally its really dark so this is my hack (?)
+		int r = term_palette[i].s.red * (1000 / 255);
+		int g = term_palette[i].s.green * (1000 / 255);
+		int b = term_palette[i].s.blue * (1000 / 255);
+
+		init_color(i, r, g, b);
+		init_pair(i + 1, i, -1);
+
+		real_palette[i] = i + 1;
+	}
 }
 
 INT32 VID_NumModes(void)
@@ -90,14 +113,10 @@ UINT32 I_GetRefreshRate(void) { return 35; }
 
 void I_UpdateNoBlit(void){}
 
-// really stupid 2 pixel thing
-static char termbuf[8 * 1024 * 1024];
-
+// can this be improved?
 void I_FinishUpdate(void)
 {
-	char *out = termbuf;
-
-	out += sprintf(out, "\x1b[H");
+    erase();
 
 	SCR_CalculateFPS();
 
@@ -110,32 +129,29 @@ void I_FinishUpdate(void)
 	if (cv_ticrate.value)
 		SCR_DisplayTicRate();
 
-	for (int y = 0; y < vid.height - 1; y += 2)
-	{
-		for (int x = 0; x < vid.width; x++)
-		{
-			UINT8 p1 = screens[0][y * vid.width + x];
-			UINT8 p2 = screens[0][(y + 1) * vid.width + x];
+	if (cv_showping.value && netgame && consoleplayer != serverplayer)
+		SCR_DisplayLocalPing();
 
-			RGBA_t c1 = term_palette[p1];
-			RGBA_t c2 = term_palette[p2];
+    int maxy, maxx;
+    getmaxyx(stdscr, maxy, maxx);
 
-			out += sprintf(out,
-				"\x1b[38;2;%d;%d;%dm"
-				"\x1b[48;2;%d;%d;%dm▀",
-				c1.s.red, c1.s.green, c1.s.blue,
-				c2.s.red, c2.s.green, c2.s.blue);
-		}
+    // cool scaling thing :sunglasses:
+    for (int y = 0; y < maxy; y++)
+    {
+        int sy = y * vid.height / maxy;
 
-		*out++ = '\n';
-		*out++ = '\x1b';
-		*out++ = '[';
-		*out++ = '0';
-		*out++ = 'm';
-	}
+        for (int x = 0; x < maxx; x++)
+        {
+            int sx = x * vid.width / maxx;
 
-	fwrite(termbuf, 1, out - termbuf, stdout);
-	fflush(stdout);
+            UINT8 p = screens[0][sy * vid.width + sx];
+
+            attron(COLOR_PAIR(real_palette[p]));
+            mvaddstr(y, x, "█");
+            attroff(COLOR_PAIR(real_palette[p]));
+        }
+    }
+    refresh();
 }
 
 void I_UpdateNoVsync(void) {}

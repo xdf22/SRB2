@@ -2,7 +2,8 @@ makedir:=$(makedir)/Terminal
 
 sources+=$(call List,terminal/Sourcefile)
 
-opts+=-D__TERMINAL__ -DHAVE_TERMIOS
+opts+=-D__TERMINAL__
+libs+= -lncurses -lpanel -lmenu
 
 ifdef FREEBSD
 # on FreeBSD, we have to link to libpthread explicitly
@@ -17,3 +18,4 @@ NOOPENMPT=1
 NOGME=1
 NOHW=1
 NOUPNP=1
+SDL=0
