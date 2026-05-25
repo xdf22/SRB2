@@ -51,9 +51,9 @@ void I_SetPalette(RGBA_t *palette)
 	for (int i = 0; i < 256; i++)
 	{
 		// normally its really dark so this is my hack (?)
-		int r = term_palette[i].s.red * (1000 / 255);
-		int g = term_palette[i].s.green * (1000 / 255);
-		int b = term_palette[i].s.blue * (1000 / 255);
+		int r = term_palette[i].s.red * 1000 / 255;
+		int g = term_palette[i].s.green * 1000 / 255;
+		int b = term_palette[i].s.blue * 1000 / 255;
 
 		init_color(i, r, g, b);
 		init_pair(i + 1, i, -1);
