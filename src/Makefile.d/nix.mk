@@ -31,6 +31,10 @@ ifeq (${TERMINAL},1)
 EXENAME?=srb2tui
 endif
 
+ifeq (${OPENGL},1)
+EXENAME?=srb2glfw
+endif
+
 # In common usage.
 ifdef LINUX
 libs+=-lrt
