@@ -325,6 +325,14 @@ static int io_openlump (lua_State *L) {
       // get lump number
       lumpnum = W_CheckNumForFullNamePK3(filename, wadnum, 0);
 
+      // not found? try searching recursively
+      if (lumpnum == INT16_MAX)
+        lumpnum = W_CheckNumForNamePwad(filename, wadnum, 0);
+
+      // still? try with long name
+      if (lumpnum == INT16_MAX)
+        lumpnum = W_CheckNumForLongNamePwad(filename, wadnum, 0);
+
       // lump exists? nice
       if (lumpnum != INT16_MAX && !W_IsLumpFolder(wadnum, lumpnum))
       {
@@ -350,9 +358,6 @@ static int io_openlump (lua_State *L) {
     free(mode_cpy);
     return luaL_error(L, "can't find lump " LUA_QS, filename);
   }
-
-  // get lump number
-  lumpnum = W_CheckNumForFullNamePK3(filename, wadnum, 0);
 
   // read lump data
   lumpf.wad = wadnum;
