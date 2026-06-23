@@ -41,7 +41,7 @@
 #include "hardware/hw_main.h"
 #endif
 
-#if NUMSCREENS < 5 || defined (__TERMINAL__)
+#if NUMSCREENS < 5 || defined (__TERMINAL__) || defined (__OPENGL__)
 #define NOWIPE // do not enable wipe image post processing for ARM, SH and MIPS CPUs
 #endif
 
