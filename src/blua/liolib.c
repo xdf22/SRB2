@@ -284,8 +284,10 @@ static int io_openlump (lua_State *L) {
 
   const char *filename = luaL_checkstring(L, 1);
   const char *mode = luaL_optstring(L, 2, "r");
+
   char *mode_cpy = strdup(mode);
   FILE **pf = NULL;
+  FILE *tmp = NULL;
   MYFILE lumpf;
   UINT16 lumpnum;
   UINT16 wadnum;
@@ -298,6 +300,10 @@ static int io_openlump (lua_State *L) {
   for (size_t i = 0; i < strlen(disallowed_chars); i++)
     if (strchr(mode, disallowed_chars[i]))
       luaL_error(L, "writing, appending, and updating lumps is not allowed");
+
+  // no empty inputs
+  if (filename[0] == '\0')
+	  return luaL_error(L, "filename cannot be empty");
 
   pf = newfile(L);
 
@@ -320,22 +326,30 @@ static int io_openlump (lua_State *L) {
       lumpnum = W_CheckNumForFullNamePK3(filename, wadnum, 0);
 
       // lump exists? nice
-      if (lumpnum != INT16_MAX)
+      if (lumpnum != INT16_MAX && !W_IsLumpFolder(wadnum, lumpnum))
       {
         lumpvalid = true;
         break;
       }
 
-      // above check failed, free stuff
-      fclose(*pf);
+      if (*pf) {
+		fclose(*pf);
+		*pf = NULL;
+	  }
     }
   }
 
   if (!wadvalid)
     luaL_error(L, "io.openlump() only works with PK3 or WAD files, and none are loaded");
 
-  if (!lumpvalid)
+  if (!lumpvalid) {
+    if (pf && *pf) {
+        fclose(*pf);
+        *pf = NULL;
+    }
+    free(mode_cpy);
     return luaL_error(L, "can't find lump " LUA_QS, filename);
+  }
 
   // get lump number
   lumpnum = W_CheckNumForFullNamePK3(filename, wadnum, 0);
@@ -349,7 +363,18 @@ static int io_openlump (lua_State *L) {
 
   fwrite(lumpf.data, lumpf.size, 1, *pf); // write data to file
   fseek(*pf, 0, SEEK_SET); // go back to beginning
-  freopen(NULL, mode_cpy, *pf); // reopen in requested mode
+  tmp = freopen(NULL, mode_cpy, *pf); // reopen in requested mode
+  if (!tmp) {
+  	perror("freopen failed");
+  	if (*pf) {
+	  fclose(*pf);
+	  *pf = NULL;
+	}
+  	*pf = NULL;
+  	free(mode_cpy);
+  	return pushresult(L, 0, "freopen");
+  }
+  *pf = tmp;
 
   lua_pop(L, 1); // pop off file data
   free(mode_cpy);
