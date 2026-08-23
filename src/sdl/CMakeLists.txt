@@ -352,3 +352,6 @@ if("${CMAKE_SYSTEM_NAME}" MATCHES Darwin)
 endif()
 
 set(SRB2_SDL2_AVAILABLE YES PARENT_SCOPE)
+
+# ok
+target_link_libraries(SRB2SDL2 PRIVATE SRB2Core)

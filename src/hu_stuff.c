@@ -45,6 +45,8 @@
 #include "p_local.h" // camera, camera2
 #include "p_tick.h"
 
+#include "dll_load.h"
+
 #ifdef HWRENDER
 #include "hardware/hw_main.h"
 #endif
@@ -1850,6 +1852,9 @@ void HU_Drawer(void)
 		else if (strength > 0)
 			V_DrawFadeScreen(0, strength);
 	}
+
+	if (DLL_Drawer)
+		DLL_Drawer();
 }
 
 //======================================================================

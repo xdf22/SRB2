@@ -1,6 +1,8 @@
 include(clang-tidy-default)
 
-add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
+add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32)
+
+add_library(SRB2Core SHARED
 	comptime.c
 	md5.c
 	lonesha256.c
@@ -11,6 +13,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	deh_soc.c
 	deh_lua.c
 	deh_tables.c
+	dll_load.c
 	z_zone.c
 	f_finale.c
 	f_wipe.c
@@ -128,7 +131,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 # information known at build time, must be told to rebuild
 # before that information can be ascertained.
 add_custom_command(
-	TARGET SRB2SDL2
+	TARGET SRB2Core
 	POST_BUILD
 	COMMAND ${CMAKE_COMMAND} -E touch_nocreate ${CMAKE_CURRENT_SOURCE_DIR}/comptime.c
 )
@@ -140,19 +143,23 @@ add_custom_target(_SRB2_reconf ALL
 	COMMAND ${CMAKE_COMMAND} -DGIT_EXECUTABLE=${GIT_EXECUTABLE} -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DBINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}/.. -P ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/Comptime.cmake
 	WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/.."
 )
-add_dependencies(SRB2SDL2 _SRB2_reconf)
+add_dependencies(SRB2Core _SRB2_reconf)
 
 if("${CMAKE_COMPILER_IS_GNUCC}" AND "${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
+	target_link_options(SRB2Core PRIVATE "-Wl,--disable-dynamicbase")
 	target_link_options(SRB2SDL2 PRIVATE "-Wl,--disable-dynamicbase")
 	if("${SRB2_CONFIG_STATIC_STDLIB}")
 		# On MinGW with internal libraries, link the standard library statically
+		target_link_options(SRB2Core PRIVATE "-static")
 		target_link_options(SRB2SDL2 PRIVATE "-static")
 	endif()
 	if(CMAKE_SIZEOF_VOID_P EQUAL 4)
+		target_link_options(SRB2Core PRIVATE "-Wl,--large-address-aware")
 		target_link_options(SRB2SDL2 PRIVATE "-Wl,--large-address-aware")
 	endif()
 endif()
 
+target_compile_features(SRB2Core PRIVATE c_std_23 cxx_std_17)
 target_compile_features(SRB2SDL2 PRIVATE c_std_23 cxx_std_17)
 
 ### Configuration
@@ -164,10 +171,12 @@ add_subdirectory(netcode)
 
 # OS macros
 if (UNIX)
+	target_compile_definitions(SRB2Core PRIVATE -DUNIXCOMMON)
 	target_compile_definitions(SRB2SDL2 PRIVATE -DUNIXCOMMON)
 endif()
 
 if (BSD MATCHES "FreeBSD")
+	target_compile_definitions(SRB2Core PRIVATE -DFREEBSD)
 	target_compile_definitions(SRB2SDL2 PRIVATE -DFREEBSD)
 endif()
 
@@ -176,39 +185,50 @@ if(CMAKE_COMPILER_IS_GNUCC)
 endif()
 
 if("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
+	target_compile_definitions(SRB2Core PRIVATE -DLINUX)
 	target_compile_definitions(SRB2SDL2 PRIVATE -DLINUX)
 	if(${SRB2_SYSTEM_BITS} EQUAL 64)
+		target_compile_definitions(SRB2Core PRIVATE -DLINUX64)
 		target_compile_definitions(SRB2SDL2 PRIVATE -DLINUX64)
 	endif()
 endif()
 
 if("${CMAKE_SYSTEM_NAME}" MATCHES "Haiku")
+	target_compile_definitions(SRB2Core PRIVATE -DNOEXECINFO)
 	target_compile_definitions(SRB2SDL2 PRIVATE -DNOEXECINFO)
+	target_link_libraries(SRB2Core PRIVATE network)
 	target_link_libraries(SRB2SDL2 PRIVATE network)
 endif()
 
 if("${CMAKE_SYSTEM_NAME}" MATCHES "Darwin")
+	target_compile_definitions(SRB2Core PRIVATE -DMACOSX)
 	target_compile_definitions(SRB2SDL2 PRIVATE -DMACOSX)
 endif()
 
 if("${SRB2_CONFIG_USE_GME}")
+	target_link_libraries(SRB2Core PRIVATE gme)
 	target_link_libraries(SRB2SDL2 PRIVATE gme)
+	target_compile_definitions(SRB2Core PRIVATE -DHAVE_GME)
 	target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_GME)
 	if(NOT "${SRB2_CONFIG_SYSTEM_LIBRARIES}")
 		# this sucks but gme doesn't use modern cmake to delineate public headers
+		target_include_directories(SRB2Core PRIVATE "${libgme_SOURCE_DIR}")
 		target_include_directories(SRB2SDL2 PRIVATE "${libgme_SOURCE_DIR}")
 	endif()
 endif()
 
+target_compile_definitions(SRB2Core PRIVATE -D_LARGEFILE64_SOURCE)
 target_compile_definitions(SRB2SDL2 PRIVATE -D_LARGEFILE64_SOURCE)
 
 if("${SRB2_CONFIG_HWRENDER}")
+	target_compile_definitions(SRB2Core PRIVATE -DHWRENDER)
 	target_compile_definitions(SRB2SDL2 PRIVATE -DHWRENDER)
 	add_subdirectory(hardware)
 
 	if("${SRB2_CONFIG_STATIC_OPENGL}")
 		find_package(OpenGL)
 		if(${OPENGL_FOUND})
+			target_compile_definitions(SRB2Core PRIVATE -DSTATIC_OPENGL)
 			target_compile_definitions(SRB2SDL2 PRIVATE -DSTATIC_OPENGL)
 		else()
 			message(WARNING "You have specified static opengl but opengl was not found. Not setting HWRENDER.")
@@ -245,13 +265,14 @@ if (NOT SRB2_CONFIG_FORCE_NO_MS_BITFIELDS)
 	if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 		check_cxx_compiler_flag("-mno-ms-bitfields" HAS_NO_MS_BITFIELDS)
 		if(HAS_NO_MS_BITFIELDS)
+			target_compile_options(SRB2Core PRIVATE -mno-ms-bitfields)
 			target_compile_options(SRB2SDL2 PRIVATE -mno-ms-bitfields)
 		endif()
 	endif()
 endif()
 
 # Compiler warnings configuration
-target_compile_options(SRB2SDL2 PRIVATE
+target_compile_options(SRB2Core PRIVATE
 	# Using generator expressions to handle per-language compile options
 
 	# C, GNU
@@ -369,7 +390,7 @@ target_compile_options(SRB2SDL2 PRIVATE
 	>
 )
 if(SRB2_CONFIG_ERRORMODE)
-	target_compile_options(SRB2SDL2 PRIVATE
+	target_compile_options(SRB2Core PRIVATE
 		$<$<OR:$<C_COMPILER_ID:GNU>,$<C_COMPILER_ID:AppleClang>,$<C_COMPILER_ID:Clang>>:
 			-Werror
 		>
@@ -381,29 +402,35 @@ if(SRB2_CONFIG_ERRORMODE)
 endif()
 
 # Link warnings configuration
-target_link_options(SRB2SDL2 PRIVATE
+target_link_options(SRB2Core PRIVATE
 	$<$<C_COMPILER_ID:GNU>:
 		# -Wl,--as-needed   - Was controlled by NOLDWARNING
 	>
 )
 
 if(${SRB2_CONFIG_DEV_BUILD})
+	target_compile_definitions(SRB2Core PRIVATE -DDEVELOP)
 	target_compile_definitions(SRB2SDL2 PRIVATE -DDEVELOP)
 endif()
+target_compile_definitions(SRB2Core PRIVATE -DCMAKECONFIG)
 target_compile_definitions(SRB2SDL2 PRIVATE -DCMAKECONFIG)
 
 # Misc. build options from Makefiles
 if(SRB2_CONFIG_DEBUGMODE)
+	target_compile_definitions(SRB2Core PRIVATE -DZDEBUG -DPARANOIA -DRANGECHECK -DPACKETDROP)
 	target_compile_definitions(SRB2SDL2 PRIVATE -DZDEBUG -DPARANOIA -DRANGECHECK -DPACKETDROP)
 endif()
 if(SRB2_CONFIG_MOBJCONSISTANCY)
+	target_compile_definitions(SRB2Core PRIVATE -DMOBJCONSISTANCY)
 	target_compile_definitions(SRB2SDL2 PRIVATE -DMOBJCONSISTANCY)
 endif()
 if(SRB2_CONFIG_PACKETDROP)
+	target_compile_definitions(SRB2Core PRIVATE -DPACKETDROP)
 	target_compile_definitions(SRB2SDL2 PRIVATE -DPACKETDROP)
 endif()
 if(SRB2_CONFIG_EXECINFO)
 else()
+	target_compile_definitions(SRB2Core PRIVATE -DNOEXECINFO)
 	target_compile_definitions(SRB2SDL2 PRIVATE -DNOEXECINFO)
 	message(STATUS "You have disabled stack trace dump support")
 endif()
@@ -418,6 +445,7 @@ endif()
 add_subdirectory(sdl)
 
 if(TARGET ZLIB::ZLIB)
+	target_compile_definitions(SRB2Core PRIVATE -DHAVE_ZLIB)
 	target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_ZLIB)
 	message(STATUS "Zlib Found")
 else()
@@ -426,8 +454,11 @@ endif()
 
 if(TARGET PNG::PNG)
 	target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_PNG)
+	target_compile_definitions(SRB2Core PRIVATE -DHAVE_PNG)
 	target_sources(SRB2SDL2 PRIVATE apng.c ${libapng_HEADER})
+	target_sources(SRB2Core PRIVATE apng.c ${libapng_HEADER})
 	target_include_directories(SRB2SDL2 PRIVATE ${libapng_INCLUDE_DIRS} ${libpng_BINARY_DIR})
+	target_include_directories(SRB2Core PRIVATE ${libapng_INCLUDE_DIRS} ${libpng_BINARY_DIR})
 	#message(STATUS "libpng inc DIRS at ${libapng_INCLUDE_DIRS}")
 	#message(STATUS "libpng bin DIRS at ${libpng_BINARY_DIR}")
 	#message(STATUS "png.h at ${libapng_HEADER}")
@@ -438,16 +469,20 @@ endif()
 
 if(TARGET PNG::PNG AND TARGET ZLIB::ZLIB)
 #libpng links zlib too?
+target_link_libraries(SRB2Core PRIVATE PNG::PNG)
 target_link_libraries(SRB2SDL2 PRIVATE PNG::PNG)
 endif()
 
 if(NOT TARGET PNG::PNG AND TARGET ZLIB::ZLIB)
 #got no libpng? we need zlib
+target_link_libraries(SRB2Core PRIVATE ZLIB::ZLIB)
 target_link_libraries(SRB2SDL2 PRIVATE ZLIB::ZLIB)
 endif()
 
 if(TARGET gme::gme)
 	target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_GME)
+	target_compile_definitions(SRB2Core PRIVATE -DHAVE_GME)
+	target_link_libraries(SRB2Core PRIVATE gme::gme)
 	target_link_libraries(SRB2SDL2 PRIVATE gme::gme)
 	message(STATUS "libgme Found")
 else()
@@ -456,14 +491,18 @@ endif()
 
 if(TARGET libopenmpt::libopenmpt)
 	target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_OPENMPT)
+	target_compile_definitions(SRB2Core PRIVATE -DHAVE_OPENMPT)
 	target_link_libraries(SRB2SDL2 PRIVATE libopenmpt::libopenmpt)
+	target_link_libraries(SRB2Core PRIVATE libopenmpt::libopenmpt)
 	message(STATUS "libopenmpt Found")
 else()
 	message(STATUS "No libopenmpt Found")
 endif()
 
 if(TARGET CURL::libcurl)
+	target_compile_definitions(SRB2Core PRIVATE -DHAVE_CURL)
 	target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_CURL)
+	target_link_libraries(SRB2Core PRIVATE CURL::libcurl)
 	target_link_libraries(SRB2SDL2 PRIVATE CURL::libcurl)
 	message(STATUS "libcurl Found")
 else()
@@ -525,8 +564,10 @@ endif()
 
 # Setup clang-tidy
 if(SRB2_CONFIG_ENABLE_CLANG_TIDY_C)
+	target_set_default_clang_tidy(SRB2Core C "-*,clang-analyzer-*,-clang-analyzer-cplusplus-*")
 	target_set_default_clang_tidy(SRB2SDL2 C "-*,clang-analyzer-*,-clang-analyzer-cplusplus-*")
 endif()
 if(SRB2_CONFIG_ENABLE_CLANG_TIDY_CXX)
+	target_set_default_clang_tidy(SRB2Core CXX "-*,clang-analyzer-*,modernize-*")
 	target_set_default_clang_tidy(SRB2SDL2 CXX "-*,clang-analyzer-*,modernize-*")
 endif()

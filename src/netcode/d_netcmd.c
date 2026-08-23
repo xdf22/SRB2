@@ -55,6 +55,8 @@
 #include "../m_perfstats.h"
 #include "../u_list.h"
 
+#include "../dll_load.h"
+
 #ifdef NETGAME_DEVMODE
 #define CV_RESTRICT CV_NETVAR
 #else
@@ -127,6 +129,7 @@ static void Command_Map_f(void);
 static void Command_ResetCamera_f(void);
 
 static void Command_Addfile(void);
+static void Command_AddLib(void);
 static void Command_Addfolder(void);
 static void Command_ListWADS_f(void);
 static void Command_RunSOC(void);
@@ -512,6 +515,7 @@ void D_RegisterServerCommands(void)
 
 	COM_AddCommand("addfolder", Command_Addfolder, COM_LUA);
 	COM_AddCommand("addfile", Command_Addfile, COM_LUA);
+	COM_AddCommand("addlib", Command_AddLib, COM_LUA);
 	COM_AddCommand("listwad", Command_ListWADS_f, COM_LUA);
 
 	COM_AddCommand("runsoc", Command_RunSOC, COM_LUA);
@@ -3407,6 +3411,27 @@ static void AddedFilesClearList(addedfile_t **itemHead)
 	{
 		next = item->next;
 		AddedFilesRemove(item, itemHead);
+	}
+}
+
+/** Adds a Library at runtime.
+  * todo: make it function like addfile?
+  */
+static void Command_AddLib(void)
+{
+	size_t argc = COM_Argc(); // amount of arguments total
+	size_t curarg; // current argument index
+
+	if (argc < 2)
+	{
+		CONS_Printf(M_GetText("addlib <filename.dll/so> [filename2...] [...]: Load add-ons\n"));
+		return;
+	}
+
+	for (curarg = 1; curarg < argc; curarg++)
+	{
+		const char *file = COM_Argv(curarg);
+		DLL_Load(file);
 	}
 }
 

@@ -6318,6 +6318,8 @@ static void M_LoadAddonsPatches(void)
 	addonsp[EXT_KART] = W_CachePatchName("M_FKART", PU_PATCH);
 #endif
 	addonsp[EXT_PK3] = W_CachePatchName("M_FPK3", PU_PATCH);
+	addonsp[EXT_DLL] = W_CachePatchName("M_FCFG", PU_PATCH);
+	addonsp[EXT_SO] = W_CachePatchName("M_FCFG", PU_PATCH);
 	addonsp[EXT_SOC] = W_CachePatchName("M_FSOC", PU_PATCH);
 	addonsp[EXT_LUA] = W_CachePatchName("M_FLUA", PU_PATCH);
 	addonsp[NUM_EXT] = W_CachePatchName("M_FUNKN", PU_PATCH);
@@ -6819,6 +6821,10 @@ static void M_HandleAddons(INT32 choice)
 #endif
 						case EXT_PK3:
 							COM_BufAddText(va("addfile \"%s%s\"", menupath, dirmenu[dir_on[menudepthleft]]+DIR_STRING));
+							break;
+						case EXT_DLL:
+						case EXT_SO:
+							COM_BufAddText(va("addlib \"%s%s\"", menupath, dirmenu[dir_on[menudepthleft]]+DIR_STRING));
 							break;
 						default:
 							S_StartSoundFromEverywhere(sfx_lose);

@@ -908,13 +908,13 @@ lumpinfo_t *getdirectoryfiles(const char *path, UINT16 *nlmp, UINT16 *nfolders)
 // Addons menu
 //
 
-char exttable[NUM_EXT_TABLE][7] = { // maximum extension length (currently 4) plus 3 (null terminator, stop, and length including previous two)
+char exttable[NUM_EXT_TABLE][9] = { // maximum extension length (currently 4) plus 3 (null terminator, stop, and length including previous two)
 	"\5.txt", "\5.cfg", // exec
 	"\5.wad",
 #ifdef USE_KART
 	"\6.kart",
 #endif
-	"\5.pk3", "\5.soc", "\5.lua"}; // addfile
+	"\5.pk3", "\5.soc", "\5.lua", "\5.dll", "\4.so"}; // addfile
 
 static char (*filenamebuf)[MAX_WADPATH];
 

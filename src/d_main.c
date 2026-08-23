@@ -77,6 +77,7 @@
 #include "m_perfstats.h"
 #include "m_random.h"
 #include "command.h"
+#include "dll_load.h"
 
 #ifdef CMAKECONFIG
 #include "config.h"
@@ -916,6 +917,10 @@ static void D_RunFrame(void)
 			renderdeltatics = realtics * FRACUNIT;
 			rendertimefrac = FRACUNIT;
 		}
+
+		// good place to put this?
+		if (DLL_Ticker)
+			DLL_Ticker();
 
 		if (interp || doDisplay)
 		{
