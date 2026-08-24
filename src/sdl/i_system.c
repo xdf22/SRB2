@@ -215,6 +215,8 @@ static char returnWadPath[256];
 #include "endtxt.h"
 #include "sdlmain.h"
 
+#include "../dll_load.h"
+
 #include "../i_joy.h"
 
 #include "../m_argv.h"
@@ -2515,6 +2517,7 @@ void I_Quit(void)
 	M_FreePlayerSetupColors();
 	I_ShutdownMusic();
 	I_ShutdownSound();
+	DLL_Unload();
 	// use this for 1.28 19990220 by Kin
 	I_ShutdownGraphics();
 	I_ShutdownInput();

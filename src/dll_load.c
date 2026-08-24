@@ -13,6 +13,8 @@
 #include "console.h"
 #include <dlfcn.h>
 
+static const char *current_dll = "";
+
 void *handle;
 
 void (*DLL_Drawer)(void);
@@ -22,10 +24,7 @@ void DLL_Load(const char *filename)
 {
     // just have one
     if (handle)
-    {
-        dlclose(handle);
-        handle = NULL;
-    }
+        DLL_Unload();
 
     handle = dlopen(filename, RTLD_NOW | RTLD_GLOBAL);
 
@@ -35,6 +34,7 @@ void DLL_Load(const char *filename)
         return;
     }
 
+    current_dll = filename;
     void (*main)(void);
 
     main = dlsym(handle, "SRB2_main"); // runs once
@@ -43,4 +43,18 @@ void DLL_Load(const char *filename)
 
     if (main)
         main();
+}
+
+const char *DLL_GetLoaded(void)
+{
+    return current_dll;
+}
+
+void DLL_Unload(void)
+{
+    current_dll = "";
+    dlclose(handle);
+    handle = NULL;
+    DLL_Drawer = NULL;
+    DLL_Ticker = NULL;
 }

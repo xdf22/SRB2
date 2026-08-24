@@ -3431,7 +3431,17 @@ static void Command_AddLib(void)
 	for (curarg = 1; curarg < argc; curarg++)
 	{
 		const char *file = COM_Argv(curarg);
-		DLL_Load(file);
+
+		if (netgame && !(server || IsPlayerAdmin(consoleplayer)))
+		{
+			CONS_Printf(M_GetText("Only the server or a remote admin can use this.\n"));
+			continue;
+		}
+		G_SetGameModified(multiplayer);
+
+		// dont try to load the same file multiple times
+		if (!(DLL_GetLoaded() == file))
+			DLL_Load(file);
 	}
 }
 

@@ -12,4 +12,7 @@
 // dont need to extern main
 extern void (*DLL_Drawer)(void);
 extern void (*DLL_Ticker)(void);
+
 void DLL_Load(const char *filename);
+const char *DLL_GetLoaded(void);
+void DLL_Unload(void);
