@@ -2095,17 +2095,9 @@ menu_t OP_JoystickSetDef =
 };
 
 #ifdef TOUCHINPUTS
-menu_t OP_TouchOptionsDef = {
-	MN_OP_MAIN + (MN_OP_P1CONTROLS << 6) + (MN_OP_TOUCHSCREEN << 12),
-	"M_CONTRO",
-	sizeof (OP_CameraOptionsMenu)/sizeof (menuitem_t),
-	&OP_P1ControlsDef,
-	OP_TouchOptionsMenu,
-	M_DrawTouchOptionsMenu,
-	35, 30,
-	0,
-	NULL
-};
+menu_t OP_TouchOptionsDef = DEFAULTMENUSTYLE(
+	MTREE3(MN_OP_MAIN, MN_OP_P1CONTROLS, MN_OP_TOUCHSCREEN),
+	"M_CONTRO", OP_TouchOptionsMenu, &OP_P1ControlsDef, 35, 30);
 #endif
 
 menu_t OP_CameraOptionsDef = {

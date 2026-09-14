@@ -72,19 +72,19 @@ boolean touch_camera;
 // Console variables for the touch screen
 static CV_PossibleValue_t touchstyle_cons_t[] = {{tms_dpad, "D-Pad"}, {tms_joystick, "Joystick"}, {0, NULL}};
 
-consvar_t cv_touchstyle = {"touch_movementstyle", "Joystick", CV_SAVE|CV_CALL|CV_NOINIT, touchstyle_cons_t, G_UpdateTouchControls, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_touchtiny = {"touch_tinycontrols", "Off", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, G_UpdateTouchControls, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_touchcamera = {"touch_camera", "On", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, G_UpdateTouchControls, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_touchstyle = CVAR_INIT("touch_movementstyle", "Joystick", CV_SAVE|CV_CALL|CV_NOINIT, touchstyle_cons_t, G_UpdateTouchControls);
+consvar_t cv_touchtiny = CVAR_INIT("touch_tinycontrols", "Off", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, G_UpdateTouchControls);
+consvar_t cv_touchcamera = CVAR_INIT("touch_camera", "On", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, G_UpdateTouchControls);
 
 static CV_PossibleValue_t touchtrans_cons_t[] = {{0, "MIN"}, {10, "MAX"}, {0, NULL}};
-consvar_t cv_touchtrans = {"touch_transinput", "10", CV_SAVE, touchtrans_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_touchmenutrans = {"touch_transmenu", "10", CV_SAVE, touchtrans_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_touchtrans = CVAR_INIT("touch_transinput", "10", CV_SAVE, touchtrans_cons_t, NULL);
+consvar_t cv_touchmenutrans = CVAR_INIT("touch_transmenu", "10", CV_SAVE, touchtrans_cons_t, NULL);
 
 // Touch screen sensitivity
 #define MAXTOUCHSENSITIVITY 100 // sensitivity steps
 static CV_PossibleValue_t touchsens_cons_t[] = {{1, "MIN"}, {MAXTOUCHSENSITIVITY, "MAX"}, {0, NULL}};
-consvar_t cv_touchsens = {"touchsens", "40", CV_SAVE, touchsens_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_touchysens = {"touchysens", "45", CV_SAVE, mousesens_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_touchsens = CVAR_INIT("touchsens", "40", CV_SAVE, touchsens_cons_t, NULL);
+consvar_t cv_touchysens = CVAR_INIT("touchysens", "45", CV_SAVE, mousesens_cons_t, NULL);
 #endif
 
 // two key codes (or virtual key) per game control
