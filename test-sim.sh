@@ -43,7 +43,7 @@ echo "==> install_name_tool: $(command -v install_name_tool)"
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BUILD_DIR="$HERE/build-ios/simulator"
 DEPLOYMENT_TARGET=15.0
-BUNDLE_ID="org.stjr.srb2legacy"
+BUNDLE_ID="org.stjr.srb2"
 SKIP_BUILD=0
 DEVICE_NAME=""
 
